@@ -73,7 +73,7 @@ export default function AdminOrders() {
     fetchOrders();
   }, []);
 
-  const updateStatus = async (orderId: string, newStatus: string) => {
+  const updateStatus = async (orderId: string, newStatus: Order["status"]) => {
     try {
       const { error } = await supabase
         .from("orders")
