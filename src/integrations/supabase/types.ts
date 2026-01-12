@@ -357,6 +357,27 @@ export type Database = {
           },
         ]
       }
+      public_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_amount: number | null

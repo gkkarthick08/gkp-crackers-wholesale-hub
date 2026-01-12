@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart, User, Sparkles } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import logo from "@/assets/logo.png";
 
 const navigation = [
@@ -15,6 +24,7 @@ const navigation = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, profile, isAdmin, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md shadow-card">
@@ -47,6 +57,18 @@ export default function Header() {
               {item.name}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                location.pathname.startsWith("/admin")
+                  ? "gradient-dealer text-white"
+                  : "text-dealer hover:bg-dealer/10"
+              }`}
+            >
+              Admin
+            </Link>
+          )}
         </div>
 
         {/* Right Actions */}
@@ -60,15 +82,63 @@ export default function Header() {
             </span>
           </Link>
           
-          <Link to="/auth">
-            <Button variant="hero" size="sm" className="hidden sm:flex gap-2">
-              <User className="h-4 w-4" />
-              Login / Signup
-            </Button>
-            <Button variant="hero" size="icon" className="sm:hidden">
-              <User className="h-4 w-4" />
-            </Button>
-          </Link>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="hero" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {profile?.full_name || "My Account"}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span>{profile?.full_name}</span>
+                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                    <span className={`text-xs mt-1 px-2 py-0.5 rounded-full w-fit ${
+                      profile?.user_type === "dealer" 
+                        ? "bg-dealer/10 text-dealer" 
+                        : "bg-primary/10 text-primary"
+                    }`}>
+                      {profile?.user_type === "dealer" ? "Dealer" : "Retail"}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/account" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    My Account
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="cursor-pointer">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="hero" size="sm" className="hidden sm:flex gap-2">
+                <User className="h-4 w-4" />
+                Login / Signup
+              </Button>
+              <Button variant="hero" size="icon" className="sm:hidden">
+                <User className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
 
           {/* Mobile menu button */}
           <Button
@@ -100,6 +170,15 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 rounded-lg font-medium gradient-dealer text-white"
+              >
+                Admin Panel
+              </Link>
+            )}
           </div>
         </div>
       )}

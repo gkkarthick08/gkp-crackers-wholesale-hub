@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Plus, Minus, ShoppingCart, Filter } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -8,38 +8,86 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-// Sample product data - will be replaced with database
-const sampleProducts = [
-  { id: "P001", name: "Lakshmi Bomb 10pcs", image: "🧨", brand: "Standard", category: "Ground Chakkar", mrp: 250, retailPrice: 200, wholesalePrice: 150, stock: 100 },
-  { id: "P002", name: "Flower Pot Large", image: "🎇", brand: "Deluxe", category: "Flower Pots", mrp: 180, retailPrice: 140, wholesalePrice: 100, stock: 200 },
-  { id: "P003", name: "Sky Shot 30pcs", image: "🎆", brand: "Premium", category: "Sky Shots", mrp: 1200, retailPrice: 950, wholesalePrice: 750, stock: 50 },
-  { id: "P004", name: "Chakkar 10pcs", image: "🌀", brand: "Standard", category: "Ground Chakkar", mrp: 150, retailPrice: 120, wholesalePrice: 90, stock: 300 },
-  { id: "P005", name: "Rocket 20pcs", image: "🚀", brand: "Deluxe", category: "Rockets", mrp: 400, retailPrice: 320, wholesalePrice: 240, stock: 150 },
-  { id: "P006", name: "Sparklers 100pcs", image: "✨", brand: "Standard", category: "Sparklers", mrp: 200, retailPrice: 160, wholesalePrice: 120, stock: 500 },
-  { id: "P007", name: "Atom Bomb 5pcs", image: "💥", brand: "Premium", category: "Bombs", mrp: 350, retailPrice: 280, wholesalePrice: 210, stock: 80 },
-  { id: "P008", name: "Fancy Fountain", image: "⛲", brand: "Deluxe", category: "Fountains", mrp: 500, retailPrice: 400, wholesalePrice: 300, stock: 120 },
-  { id: "P009", name: "Whistle Rocket 15pcs", image: "🎵", brand: "Standard", category: "Rockets", mrp: 280, retailPrice: 220, wholesalePrice: 165, stock: 200 },
-  { id: "P010", name: "Color Smoke 6pcs", image: "💨", brand: "Deluxe", category: "Novelty", mrp: 180, retailPrice: 145, wholesalePrice: 110, stock: 400 },
-];
+interface Product {
+  id: string;
+  product_code: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  mrp: number;
+  retail_price: number;
+  wholesale_price: number;
+  stock: number;
+  category: { name: string } | null;
+  brand: { name: string } | null;
+}
 
-const categories = ["All", "Ground Chakkar", "Flower Pots", "Sky Shots", "Rockets", "Sparklers", "Bombs", "Fountains", "Novelty"];
+interface Category {
+  id: string;
+  name: string;
+}
 
 export default function QuickOrder() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [isDealer] = useState(false); // Will be dynamic based on auth
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { profile } = useAuth();
+
+  const isDealer = profile?.user_type === "dealer";
+
+  // Fetch products and categories
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          supabase
+            .from("products")
+            .select(`
+              *,
+              category:categories(name),
+              brand:brands(name)
+            `)
+            .eq("is_visible", true)
+            .order("display_order"),
+          supabase
+            .from("categories")
+            .select("id, name")
+            .eq("is_active", true)
+            .order("display_order")
+        ]);
+
+        if (productsRes.data) {
+          setProducts(productsRes.data as Product[]);
+        }
+        if (categoriesRes.data) {
+          setCategories(categoriesRes.data);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredProducts = useMemo(() => {
-    return sampleProducts.filter(product => {
+    return products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           product.id.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
+                           product.product_code.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All" || product.category?.name === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [products, searchQuery, selectedCategory]);
 
   const updateQuantity = (productId: string, delta: number) => {
     setQuantities(prev => {
@@ -54,18 +102,18 @@ export default function QuickOrder() {
     setQuantities(prev => ({ ...prev, [productId]: Math.max(0, numValue) }));
   };
 
-  const getPrice = (product: typeof sampleProducts[0]) => {
-    return isDealer ? product.wholesalePrice : product.retailPrice;
+  const getPrice = (product: Product) => {
+    return isDealer ? product.wholesale_price : product.retail_price;
   };
 
   const totalItems = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
-  const totalAmount = sampleProducts.reduce((sum, product) => {
+  const totalAmount = products.reduce((sum, product) => {
     const qty = quantities[product.id] || 0;
     return sum + (qty * getPrice(product));
   }, 0);
 
   const addToEstimate = () => {
-    const itemsToAdd = sampleProducts.filter(p => quantities[p.id] > 0);
+    const itemsToAdd = products.filter(p => quantities[p.id] > 0);
     if (itemsToAdd.length === 0) {
       toast({
         title: "No items selected",
@@ -78,6 +126,22 @@ export default function QuickOrder() {
       title: "Added to Estimate Cart!",
       description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} added.`,
     });
+  };
+
+  // Emoji map for products
+  const getProductEmoji = (categoryName: string | undefined) => {
+    const emojiMap: Record<string, string> = {
+      "Ground Chakkar": "🌀",
+      "Flower Pots": "🎇",
+      "Sky Shots": "🎆",
+      "Rockets": "🚀",
+      "Sparklers": "✨",
+      "Bombs": "💥",
+      "Fountains": "⛲",
+      "Novelty": "🎭",
+      "Gift Boxes": "🎁"
+    };
+    return emojiMap[categoryName || ""] || "🧨";
   };
 
   return (
@@ -117,8 +181,9 @@ export default function QuickOrder() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="All">All Categories</SelectItem>
                 {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -144,61 +209,77 @@ export default function QuickOrder() {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((product, index) => {
-                  const qty = quantities[product.id] || 0;
-                  const amount = qty * getPrice(product);
-                  return (
-                    <tr key={product.id} className={qty > 0 ? "bg-primary/5" : ""}>
-                      <td className="text-center text-muted-foreground">{index + 1}</td>
-                      <td className="text-center text-3xl">{product.image}</td>
-                      <td>
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">ID: {product.id}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <Badge variant="outline">{product.brand}</Badge>
-                      </td>
-                      <td className="text-right text-muted-foreground line-through">
-                        ₹{product.mrp}
-                      </td>
-                      <td className="text-right font-semibold text-primary">
-                        ₹{getPrice(product)}
-                      </td>
-                      <td>
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(product.id, -1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={qty}
-                            onChange={(e) => setQuantity(product.id, e.target.value)}
-                            className="w-16 h-8 text-center"
-                          />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(product.id, 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </td>
-                      <td className="text-right font-bold">
-                        {amount > 0 ? `₹${amount.toLocaleString()}` : "-"}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
+                      Loading products...
+                    </td>
+                  </tr>
+                ) : filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((product, index) => {
+                    const qty = quantities[product.id] || 0;
+                    const amount = qty * getPrice(product);
+                    return (
+                      <tr key={product.id} className={qty > 0 ? "bg-primary/5" : ""}>
+                        <td className="text-center text-muted-foreground">{index + 1}</td>
+                        <td className="text-center text-3xl">
+                          {getProductEmoji(product.category?.name)}
+                        </td>
+                        <td>
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">ID: {product.product_code}</p>
+                          </div>
+                        </td>
+                        <td>
+                          <Badge variant="outline">{product.brand?.name || "N/A"}</Badge>
+                        </td>
+                        <td className="text-right text-muted-foreground line-through">
+                          ₹{product.mrp}
+                        </td>
+                        <td className="text-right font-semibold text-primary">
+                          ₹{getPrice(product)}
+                        </td>
+                        <td>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(product.id, -1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={qty}
+                              onChange={(e) => setQuantity(product.id, e.target.value)}
+                              className="w-16 h-8 text-center"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(product.id, 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="text-right font-bold">
+                          {amount > 0 ? `₹${amount.toLocaleString()}` : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
