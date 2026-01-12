@@ -1,22 +1,43 @@
 import { useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, User, Building2, ArrowLeft, Sparkles } from "lucide-react";
+import { Eye, EyeOff, User, Building2, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
+import { z } from "zod";
+
+// Validation schemas
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().min(10, "Please enter a valid phone number").max(15),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  businessName: z.string().optional(),
+  gstNumber: z.string().optional(),
+  referralCode: z.string().optional(),
+});
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "retail";
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp, user } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,18 +50,119 @@ export default function Auth() {
 
   const isDealer = userType === "dealer";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  if (user) {
+    navigate("/quick-order");
+    return null;
+  }
+
+  const validateForm = () => {
+    try {
+      if (isLogin) {
+        loginSchema.parse({ email: formData.email, password: formData.password });
+      } else {
+        signupSchema.parse(formData);
+      }
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase auth
-    toast({
-      title: isLogin ? "Login Successful!" : "Registration Successful!",
-      description: "Redirecting to your dashboard...",
-    });
-    setTimeout(() => navigate("/quick-order"), 1500);
+    
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await signIn(formData.email, formData.password);
+        
+        if (error) {
+          if (error.message.includes("Invalid login credentials")) {
+            toast({
+              title: "Login Failed",
+              description: "Invalid email or password. Please try again.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Login Failed",
+              description: error.message,
+              variant: "destructive"
+            });
+          }
+          return;
+        }
+        
+        toast({
+          title: "Login Successful!",
+          description: "Welcome back to GKP Crackers",
+        });
+        navigate("/quick-order");
+      } else {
+        const metadata = {
+          full_name: formData.name,
+          phone: formData.phone,
+          user_type: isDealer ? "dealer" : "retail",
+          business_name: isDealer ? formData.businessName : "",
+          referred_by: formData.referralCode || "",
+        };
+
+        const { error } = await signUp(formData.email, formData.password, metadata);
+        
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({
+              title: "Account Exists",
+              description: "This email is already registered. Please login instead.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Registration Failed",
+              description: error.message,
+              variant: "destructive"
+            });
+          }
+          return;
+        }
+        
+        toast({
+          title: "Registration Successful!",
+          description: "Your account has been created. You can now login.",
+        });
+        setIsLogin(true);
+        setFormData(prev => ({ ...prev, password: "" }));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
   };
 
   return (
@@ -87,15 +209,17 @@ export default function Auth() {
               <form onSubmit={handleSubmit}>
                 <TabsContent value="login" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email or Phone</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
-                      type="text"
-                      placeholder="Enter email or phone"
+                      type="email"
+                      placeholder="Enter your email"
                       value={formData.email}
                       onChange={(e) => updateField("email", e.target.value)}
                       required
+                      disabled={isSubmitting}
                     />
+                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
@@ -107,6 +231,7 @@ export default function Auth() {
                         value={formData.password}
                         onChange={(e) => updateField("password", e.target.value)}
                         required
+                        disabled={isSubmitting}
                       />
                       <button
                         type="button"
@@ -116,14 +241,23 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
                   <Button 
                     type="submit" 
                     variant={isDealer ? "dealer" : "hero"} 
                     size="lg" 
                     className="w-full"
+                    disabled={isSubmitting}
                   >
-                    Login
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Logging in...
+                      </>
+                    ) : (
+                      "Login"
+                    )}
                   </Button>
                 </TabsContent>
 
@@ -136,7 +270,9 @@ export default function Auth() {
                       value={formData.name}
                       onChange={(e) => updateField("name", e.target.value)}
                       required
+                      disabled={isSubmitting}
                     />
+                    {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
@@ -147,7 +283,9 @@ export default function Auth() {
                       value={formData.phone}
                       onChange={(e) => updateField("phone", e.target.value)}
                       required
+                      disabled={isSubmitting}
                     />
+                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -158,7 +296,9 @@ export default function Auth() {
                       value={formData.email}
                       onChange={(e) => updateField("email", e.target.value)}
                       required
+                      disabled={isSubmitting}
                     />
+                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                   </div>
 
                   {isDealer && (
@@ -171,6 +311,7 @@ export default function Auth() {
                           value={formData.businessName}
                           onChange={(e) => updateField("businessName", e.target.value)}
                           required
+                          disabled={isSubmitting}
                         />
                       </div>
                       <div className="space-y-2">
@@ -180,6 +321,7 @@ export default function Auth() {
                           placeholder="Enter GST number"
                           value={formData.gstNumber}
                           onChange={(e) => updateField("gstNumber", e.target.value)}
+                          disabled={isSubmitting}
                         />
                       </div>
                     </>
@@ -191,10 +333,11 @@ export default function Auth() {
                       <Input
                         id="signup-password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
+                        placeholder="Create a password (min 6 chars)"
                         value={formData.password}
                         onChange={(e) => updateField("password", e.target.value)}
                         required
+                        disabled={isSubmitting}
                       />
                       <button
                         type="button"
@@ -204,6 +347,7 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -213,6 +357,7 @@ export default function Auth() {
                       placeholder="Enter referral code"
                       value={formData.referralCode}
                       onChange={(e) => updateField("referralCode", e.target.value)}
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -221,8 +366,16 @@ export default function Auth() {
                     variant={isDealer ? "dealer" : "hero"} 
                     size="lg" 
                     className="w-full"
+                    disabled={isSubmitting}
                   >
-                    Create Account
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
                   </Button>
                 </TabsContent>
               </form>
