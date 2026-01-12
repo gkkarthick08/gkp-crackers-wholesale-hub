@@ -6,7 +6,7 @@ import WhyChooseUs from "@/components/WhyChooseUs";
 import StoreLocation from "@/components/StoreLocation";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
-
+import AnnouncementPopup from "@/components/AnnouncementPopup";
 export default function Index() {
   return (
     <div className="min-h-screen bg-background">
@@ -20,6 +20,7 @@ export default function Index() {
       </main>
       <Footer />
       <FloatingButtons />
+      <AnnouncementPopup />
     </div>
   );
 }

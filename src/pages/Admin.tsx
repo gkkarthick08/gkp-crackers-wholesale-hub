@@ -24,6 +24,7 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminProducts from "@/components/admin/AdminProducts";
 import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
+import AdminAnnouncements from "@/components/admin/AdminAnnouncements";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -155,6 +156,7 @@ export default function Admin() {
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="customers" element={<AdminCustomers />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="*" element={
                 <div className="text-center py-20">
                   <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
