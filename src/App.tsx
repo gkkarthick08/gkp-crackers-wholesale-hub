@@ -9,6 +9,7 @@ import QuickOrder from "./pages/QuickOrder";
 import Auth from "./pages/Auth";
 import Cart from "./pages/Cart";
 import Admin from "./pages/Admin";
+import Wallet from "./pages/Wallet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/quick-order" element={<QuickOrder />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/wallet" element={<Wallet />} />
             <Route path="/admin/*" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
