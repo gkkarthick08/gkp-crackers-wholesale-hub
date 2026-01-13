@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -111,6 +111,12 @@ export default function Header() {
                   <Link to="/account" className="cursor-pointer">
                     <Settings className="h-4 w-4 mr-2" />
                     My Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/wallet" className="cursor-pointer">
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Wallet & Referrals
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
