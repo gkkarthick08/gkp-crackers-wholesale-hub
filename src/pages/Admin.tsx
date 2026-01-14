@@ -27,16 +27,19 @@ import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminAnnouncements from "@/components/admin/AdminAnnouncements";
 import AdminCategories from "@/components/admin/AdminCategories";
+import AdminBrands from "@/components/admin/AdminBrands";
+import AdminWallet from "@/components/admin/AdminWallet";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Categories", href: "/admin/categories", icon: FolderTree },
+  { name: "Brands", href: "/admin/brands", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Customers", href: "/admin/customers", icon: Users },
+  { name: "Wallet", href: "/admin/wallet", icon: Wallet },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Referrals", href: "/admin/referrals", icon: Gift },
-  { name: "Wallet", href: "/admin/wallet", icon: Wallet },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
@@ -158,8 +161,10 @@ export default function Admin() {
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="categories" element={<AdminCategories />} />
+              <Route path="brands" element={<AdminBrands />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="customers" element={<AdminCustomers />} />
+              <Route path="wallet" element={<AdminWallet />} />
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="*" element={
                 <div className="text-center py-20">

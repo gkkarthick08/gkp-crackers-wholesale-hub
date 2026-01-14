@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, User, Building2, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const signupSchema = z.object({
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "retail";
+  const refCode = searchParams.get("ref") || "";
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, signUp, user } = useAuth();
@@ -45,10 +46,17 @@ export default function Auth() {
     password: "",
     businessName: "",
     gstNumber: "",
-    referralCode: ""
+    referralCode: refCode
   });
 
   const isDealer = userType === "dealer";
+
+  // Update referral code if URL changes
+  useEffect(() => {
+    if (refCode && !formData.referralCode) {
+      setFormData(prev => ({ ...prev, referralCode: refCode }));
+    }
+  }, [refCode]);
 
   // Redirect if already logged in
   if (user) {

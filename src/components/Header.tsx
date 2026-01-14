@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { user, profile, isAdmin, signOut } = useAuth();
+  const { totalItems } = useCart();
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md shadow-card">
@@ -77,9 +79,11 @@ export default function Header() {
             <Button variant="ghost" size="icon">
               <ShoppingCart className="h-5 w-5" />
             </Button>
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-bold">
-              0
-            </span>
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-bold">
+                {totalItems > 99 ? "99+" : totalItems}
+              </span>
+            )}
           </Link>
           
           {user ? (
@@ -117,6 +121,12 @@ export default function Header() {
                   <Link to="/wallet" className="cursor-pointer">
                     <Wallet className="h-4 w-4 mr-2" />
                     Wallet & Referrals
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/orders" className="cursor-pointer">
+                    <Package className="h-4 w-4 mr-2" />
+                    My Orders
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

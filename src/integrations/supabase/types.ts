@@ -502,6 +502,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_wallet_transaction: {
+        Args: {
+          target_user_id: string
+          trans_description: string
+          trans_type: string
+          transaction_amount: number
+        }
+        Returns: boolean
+      }
+      claim_referral_bonus: { Args: { referral_id: string }; Returns: boolean }
       generate_order_number: { Args: never; Returns: string }
       has_role: {
         Args: {
