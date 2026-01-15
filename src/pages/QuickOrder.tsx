@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Plus, Minus, ShoppingCart, Filter } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
@@ -39,6 +41,8 @@ export default function QuickOrder() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { profile } = useAuth();
+  const { addItem } = useCart();
+  const navigate = useNavigate();
 
   const isDealer = profile?.user_type === "dealer";
 
@@ -122,10 +126,29 @@ export default function QuickOrder() {
       });
       return;
     }
+    
+    // Add each item to cart
+    itemsToAdd.forEach(product => {
+      const qty = quantities[product.id];
+      addItem({
+        id: product.id,
+        name: product.name,
+        product_code: product.product_code,
+        price: getPrice(product),
+        image_url: product.image_url
+      }, qty);
+    });
+
     toast({
-      title: "Added to Estimate Cart!",
+      title: "Added to Cart!",
       description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} added.`,
     });
+    
+    // Reset quantities after adding
+    setQuantities({});
+    
+    // Navigate to cart
+    navigate("/cart");
   };
 
   // Emoji map for products
