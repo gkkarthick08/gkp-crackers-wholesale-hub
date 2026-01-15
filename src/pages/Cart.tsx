@@ -89,27 +89,27 @@ export default function Cart() {
 
     setIsSubmitting(true);
     try {
-      // Get price based on user type
-      const price = profile?.user_type === "dealer" ? "wholesale" : "retail";
+      // Generate order number
+      const { data: orderNumber, error: orderNumError } = await supabase.rpc("generate_order_number");
+      if (orderNumError) throw orderNumError;
 
       // Create order
-      const orderData = {
-        customer_id: user?.id || null,
-        customer_name: customerDetails.name,
-        customer_phone: customerDetails.phone,
-        customer_address: customerDetails.address,
-        notes: customerDetails.notes || null,
-        total_items: totalItems,
-        total_amount: totalAmount,
-        discount_amount: walletDiscount,
-        final_amount: finalAmount,
-        user_type: (profile?.user_type || "retail") as "dealer" | "retail",
-        status: "pending" as const
-      };
-
       const { data: order, error: orderError } = await supabase
         .from("orders")
-        .insert(orderData)
+        .insert([{
+          order_number: orderNumber,
+          customer_id: user?.id || null,
+          customer_name: customerDetails.name,
+          customer_phone: customerDetails.phone,
+          customer_address: customerDetails.address,
+          notes: customerDetails.notes || null,
+          total_items: totalItems,
+          total_amount: totalAmount,
+          discount_amount: walletDiscount,
+          final_amount: finalAmount,
+          user_type: (profile?.user_type || "retail") as "dealer" | "retail",
+          status: "pending" as const
+        }])
         .select()
         .single();
 
