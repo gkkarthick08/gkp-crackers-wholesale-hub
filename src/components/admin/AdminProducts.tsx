@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,6 +66,13 @@ export default function AdminProducts() {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     product_code: "",
     name: "",
@@ -76,6 +84,7 @@ export default function AdminProducts() {
     category_id: "",
     brand_id: "",
     is_visible: true,
+    image_url: "",
   });
 
   const fetchData = async () => {
@@ -123,7 +132,11 @@ export default function AdminProducts() {
       category_id: "",
       brand_id: "",
       is_visible: true,
+      image_url: "",
     });
+    setImageFile(null);
+    setImagePreview(null);
+    setUploadProgress(0);
     setIsDialogOpen(true);
   };
 
@@ -140,8 +153,91 @@ export default function AdminProducts() {
       category_id: product.category_id || "",
       brand_id: product.brand_id || "",
       is_visible: product.is_visible,
+      image_url: product.image_url || "",
     });
+    setImageFile(null);
+    setImagePreview(product.image_url || null);
+    setUploadProgress(0);
     setIsDialogOpen(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please select an image file", variant: "destructive" });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image must be less than 5MB", variant: "destructive" });
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const uploadImage = async (productId: string): Promise<string | null> => {
+    if (!imageFile) return formData.image_url || null;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const fileExt = imageFile.name.split(".").pop();
+      const fileName = `${productId}-${Date.now()}.${fileExt}`;
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => Math.min(prev + 10, 90));
+      }, 100);
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, imageFile, { upsert: true });
+
+      clearInterval(progressInterval);
+
+      if (uploadError) throw uploadError;
+
+      setUploadProgress(100);
+
+      const { data: urlData } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    } catch (error: any) {
+      toast({ title: "Error uploading image", description: error.message, variant: "destructive" });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = async () => {
+    // If there's an existing image URL, delete from storage
+    if (formData.image_url && !imageFile) {
+      try {
+        const fileName = formData.image_url.split("/").pop();
+        if (fileName) {
+          await supabase.storage.from("product-images").remove([fileName]);
+        }
+      } catch (error) {
+        console.error("Error removing image:", error);
+      }
+    }
+
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSave = async () => {
@@ -152,30 +248,69 @@ export default function AdminProducts() {
 
     setIsSaving(true);
     try {
-      const productData = {
-        product_code: formData.product_code,
-        name: formData.name,
-        description: formData.description || null,
-        mrp: parseFloat(formData.mrp),
-        retail_price: parseFloat(formData.retail_price),
-        wholesale_price: parseFloat(formData.wholesale_price),
-        stock: parseInt(formData.stock) || 0,
-        category_id: formData.category_id || null,
-        brand_id: formData.brand_id || null,
-        is_visible: formData.is_visible,
-      };
+      let imageUrl = formData.image_url;
 
-      if (editingProduct) {
+      // Handle new product - need to create first to get ID for image
+      if (!editingProduct) {
+        const productData = {
+          product_code: formData.product_code,
+          name: formData.name,
+          description: formData.description || null,
+          mrp: parseFloat(formData.mrp),
+          retail_price: parseFloat(formData.retail_price),
+          wholesale_price: parseFloat(formData.wholesale_price),
+          stock: parseInt(formData.stock) || 0,
+          category_id: formData.category_id || null,
+          brand_id: formData.brand_id || null,
+          is_visible: formData.is_visible,
+        };
+
+        const { data: newProduct, error } = await supabase
+          .from("products")
+          .insert(productData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Upload image if selected
+        if (imageFile && newProduct) {
+          imageUrl = await uploadImage(newProduct.id);
+          if (imageUrl) {
+            await supabase
+              .from("products")
+              .update({ image_url: imageUrl })
+              .eq("id", newProduct.id);
+          }
+        }
+
+        toast({ title: "Product added successfully" });
+      } else {
+        // Upload image if new file selected
+        if (imageFile) {
+          imageUrl = await uploadImage(editingProduct.id);
+        }
+
+        const productData = {
+          product_code: formData.product_code,
+          name: formData.name,
+          description: formData.description || null,
+          mrp: parseFloat(formData.mrp),
+          retail_price: parseFloat(formData.retail_price),
+          wholesale_price: parseFloat(formData.wholesale_price),
+          stock: parseInt(formData.stock) || 0,
+          category_id: formData.category_id || null,
+          brand_id: formData.brand_id || null,
+          is_visible: formData.is_visible,
+          image_url: imageUrl || null,
+        };
+
         const { error } = await supabase
           .from("products")
           .update(productData)
           .eq("id", editingProduct.id);
         if (error) throw error;
         toast({ title: "Product updated successfully" });
-      } else {
-        const { error } = await supabase.from("products").insert(productData);
-        if (error) throw error;
-        toast({ title: "Product added successfully" });
       }
 
       setIsDialogOpen(false);
@@ -357,6 +492,66 @@ export default function AdminProducts() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
               />
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="space-y-3">
+              <Label>Product Image</Label>
+              <div className="border-2 border-dashed border-border rounded-lg p-4">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Product preview"
+                      className="w-full h-48 object-contain rounded-lg bg-muted"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={removeImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    {isUploading && (
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-xs text-center mt-1 text-muted-foreground">
+                          Uploading... {uploadProgress}%
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">Click to upload product image</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+              </div>
+              {!imagePreview && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4" />
+                  Choose Image
+                </Button>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
