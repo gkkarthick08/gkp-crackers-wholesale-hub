@@ -132,17 +132,20 @@ export default function Cart() {
 
       if (itemsError) throw itemsError;
 
-      // Deduct wallet balance if used
+      // Deduct wallet balance if used (using secure user_wallet_purchase function)
       if (useWallet && walletDiscount > 0 && user) {
-        const { error: walletError } = await supabase.rpc("admin_wallet_transaction", {
-          target_user_id: user.id,
-          transaction_amount: -walletDiscount,
-          trans_type: "purchase",
-          trans_description: `Used for order ${order.order_number}`
+        const { error: walletError } = await supabase.rpc("user_wallet_purchase", {
+          order_id: order.id,
+          purchase_amount: walletDiscount
         });
 
         if (walletError) {
           console.error("Wallet deduction error:", walletError);
+          toast({
+            title: "Wallet deduction failed",
+            description: walletError.message,
+            variant: "destructive"
+          });
         } else {
           await refreshProfile();
         }

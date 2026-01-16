@@ -521,6 +521,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      user_wallet_purchase: {
+        Args: { order_id: string; purchase_amount: number }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "dealer" | "retail"
