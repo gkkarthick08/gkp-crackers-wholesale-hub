@@ -54,14 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAdminRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin")
-        .single();
-
-      setIsAdmin(!!data && !error);
+      // Use server-side RPC to verify admin status securely
+      const { data, error } = await supabase.rpc("is_admin");
+      
+      if (error) {
+        console.error("Error checking admin role:", error);
+        setIsAdmin(false);
+        return;
+      }
+      
+      setIsAdmin(!!data);
     } catch {
       setIsAdmin(false);
     }
