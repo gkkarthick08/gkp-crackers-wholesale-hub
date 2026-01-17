@@ -29,6 +29,7 @@ import AdminAnnouncements from "@/components/admin/AdminAnnouncements";
 import AdminCategories from "@/components/admin/AdminCategories";
 import AdminBrands from "@/components/admin/AdminBrands";
 import AdminWallet from "@/components/admin/AdminWallet";
+import AdminReferrals from "@/components/admin/AdminReferrals";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -165,6 +166,7 @@ export default function Admin() {
               <Route path="orders" element={<AdminOrders />} />
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="wallet" element={<AdminWallet />} />
+              <Route path="referrals" element={<AdminReferrals />} />
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="*" element={
                 <div className="text-center py-20">
