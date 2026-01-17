@@ -30,6 +30,8 @@ import AdminCategories from "@/components/admin/AdminCategories";
 import AdminBrands from "@/components/admin/AdminBrands";
 import AdminWallet from "@/components/admin/AdminWallet";
 import AdminReferrals from "@/components/admin/AdminReferrals";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import AdminSettings from "@/components/admin/AdminSettings";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -168,10 +170,12 @@ export default function Admin() {
               <Route path="wallet" element={<AdminWallet />} />
               <Route path="referrals" element={<AdminReferrals />} />
               <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={
                 <div className="text-center py-20">
-                  <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
-                  <p className="text-muted-foreground">This section is under development.</p>
+                  <h2 className="text-2xl font-bold mb-2">Page Not Found</h2>
+                  <p className="text-muted-foreground">This admin section doesn't exist.</p>
                 </div>
               } />
             </Routes>
