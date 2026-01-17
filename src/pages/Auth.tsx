@@ -251,7 +251,17 @@ export default function Auth() {
                     </div>
                     {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
-                  <Button 
+                  
+                  <div className="text-right">
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
+                  
+                  <Button
                     type="submit" 
                     variant={isDealer ? "dealer" : "hero"} 
                     size="lg" 

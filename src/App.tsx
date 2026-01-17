@@ -8,6 +8,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import QuickOrder from "./pages/QuickOrder";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Cart from "./pages/Cart";
 import Admin from "./pages/Admin";
 import Wallet from "./pages/Wallet";
@@ -32,6 +34,8 @@ const App = () => (
               <Route path="/quick-order" element={<QuickOrder />} />
               <Route path="/products" element={<Navigate to="/quick-order" replace />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/orders" element={<Orders />} />
