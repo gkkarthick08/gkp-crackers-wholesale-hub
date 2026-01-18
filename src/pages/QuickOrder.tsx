@@ -135,6 +135,7 @@ export default function QuickOrder() {
         name: product.name,
         product_code: product.product_code,
         price: getPrice(product),
+        mrp: product.mrp,
         image_url: product.image_url
       }, qty);
     });
@@ -263,11 +264,16 @@ export default function QuickOrder() {
                         <td>
                           <Badge variant="outline">{product.brand?.name || "N/A"}</Badge>
                         </td>
-                        <td className="text-right text-muted-foreground line-through">
+                        <td className="text-right text-muted-foreground line-through text-sm">
                           ₹{product.mrp}
                         </td>
-                        <td className="text-right font-semibold text-primary">
-                          ₹{getPrice(product)}
+                        <td className="text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="font-semibold text-primary">₹{getPrice(product)}</span>
+                            <span className="text-xs text-green-600 font-medium">
+                              {Math.round(((product.mrp - getPrice(product)) / product.mrp) * 100)}% OFF
+                            </span>
+                          </div>
                         </td>
                         <td>
                           <div className="flex items-center justify-center gap-1">
