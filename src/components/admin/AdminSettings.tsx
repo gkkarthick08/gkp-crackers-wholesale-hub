@@ -33,6 +33,7 @@ interface SiteSettings {
   storeAddress: string;
   storeTimings: string;
   minOrderValue: number;
+  minOrderValueDealer: number;
   deliveryCharge: number;
   freeDeliveryAbove: number;
   dealerDiscount: number;
@@ -54,6 +55,7 @@ const defaultSettings: SiteSettings = {
   storeAddress: "123 Main Street, Chennai, Tamil Nadu 600001",
   storeTimings: "9:00 AM - 9:00 PM",
   minOrderValue: 500,
+  minOrderValueDealer: 1000,
   deliveryCharge: 50,
   freeDeliveryAbove: 2000,
   dealerDiscount: 10,
@@ -297,12 +299,22 @@ export default function AdminSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="minOrderValue">Minimum Order Value (₹)</Label>
+                  <Label htmlFor="minOrderValue">Min Order - Retail (₹)</Label>
                   <Input
                     id="minOrderValue"
                     type="number"
                     value={settings.minOrderValue}
                     onChange={(e) => updateSetting("minOrderValue", parseFloat(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="minOrderValueDealer">Min Order - Dealer (₹)</Label>
+                  <Input
+                    id="minOrderValueDealer"
+                    type="number"
+                    value={settings.minOrderValueDealer}
+                    onChange={(e) => updateSetting("minOrderValueDealer", parseFloat(e.target.value) || 0)}
                     min="0"
                   />
                 </div>

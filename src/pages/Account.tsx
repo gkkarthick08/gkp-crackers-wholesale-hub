@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Mail, MapPin, Building2, FileText, Save, Loader2, Shield, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Phone, Mail, MapPin, Building2, FileText, Save, Loader2, Shield, Lock, Eye, EyeOff, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -285,7 +285,46 @@ export default function Account() {
                 </Badge>
               </div>
               
-              {profile?.is_verified && (
+              {/* Verification Status for Dealers */}
+              {isDealer && (
+                <div className={`mt-4 p-4 rounded-xl ${
+                  profile?.is_verified 
+                    ? "bg-green-500/10 border border-green-500/20" 
+                    : "bg-amber-500/10 border border-amber-500/20"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {profile?.is_verified ? (
+                      <>
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-green-700 dark:text-green-400">
+                            Account Verified Successfully!
+                          </p>
+                          <p className="text-sm text-green-600 dark:text-green-500">
+                            Your dealer account is active. Enjoy wholesale prices on all products.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-amber-700 dark:text-amber-400">
+                            Account Under Verification
+                          </p>
+                          <p className="text-sm text-amber-600 dark:text-amber-500">
+                            Your dealer account is being reviewed. You'll receive wholesale pricing once verified.
+                            This usually takes 24-48 hours.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Verified badge for non-dealers */}
+              {!isDealer && profile?.is_verified && (
                 <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
                   <Shield className="h-4 w-4" />
                   <span>Verified Account</span>

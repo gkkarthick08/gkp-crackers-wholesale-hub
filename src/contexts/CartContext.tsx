@@ -6,6 +6,7 @@ export interface CartItem {
   name: string;
   image_url: string | null;
   price: number;
+  mrp: number;
   quantity: number;
 }
 
@@ -17,6 +18,8 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalAmount: number;
+  totalMrp: number;
+  totalSavings: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -73,6 +76,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+  const totalMrp = items.reduce(
+    (sum, item) => sum + item.mrp * item.quantity,
+    0
+  );
+  const totalSavings = totalMrp - totalAmount;
 
   return (
     <CartContext.Provider
@@ -84,6 +92,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         totalItems,
         totalAmount,
+        totalMrp,
+        totalSavings,
       }}
     >
       {children}
