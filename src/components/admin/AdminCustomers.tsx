@@ -3,6 +3,8 @@ import { Search, Loader2, User, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/use-toast";
 import {
   Table,
   TableBody,
@@ -39,67 +41,94 @@ export default function AdminCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
+  const fetchCustomers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setCustomers((data as Customer[]) || []);
+    } catch (error: any) {
+      console.error("Error fetching customers:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCustomers = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setCustomers((data as Customer[]) || []);
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCustomers();
   }, []);
 
+  const toggleVerify = async (id: string, value: boolean) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_verified: value })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Permission denied",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: value ? "Dealer verified" : "Verification removed",
+      });
+      fetchCustomers();
+    }
+  };
+
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
-      customer.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       (customer.phone?.includes(searchQuery) ?? false);
-    const matchesType = typeFilter === "all" || customer.user_type === typeFilter;
+
+    const matchesType =
+      typeFilter === "all" || customer.user_type === typeFilter;
+
     return matchesSearch && matchesType;
   });
 
-  const dealerCount = customers.filter(c => c.user_type === "dealer").length;
-  const retailCount = customers.filter(c => c.user_type === "retail").length;
+  const dealerCount = customers.filter((c) => c.user_type === "dealer").length;
+  const retailCount = customers.filter((c) => c.user_type === "retail").length;
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Customers</h1>
-        <p className="text-muted-foreground">Manage your customer database</p>
+        <p className="text-muted-foreground">
+          Manage your customer database
+        </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <Card className="shadow-card">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <User className="h-5 w-5 text-primary" />
-              </div>
+              <User className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-2xl font-bold">{customers.length}</p>
-                <p className="text-sm text-muted-foreground">Total Customers</p>
+                <p className="text-sm text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
+
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-dealer/10">
-                <Building2 className="h-5 w-5 text-dealer" />
-              </div>
+              <Building2 className="h-5 w-5 text-dealer" />
               <div>
                 <p className="text-2xl font-bold">{dealerCount}</p>
                 <p className="text-sm text-muted-foreground">Dealers</p>
@@ -107,12 +136,11 @@ export default function AdminCustomers() {
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
+
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/10">
-                <User className="h-5 w-5 text-accent" />
-              </div>
+              <User className="h-5 w-5 text-accent" />
               <div>
                 <p className="text-2xl font-bold">{retailCount}</p>
                 <p className="text-sm text-muted-foreground">Retail</p>
@@ -123,37 +151,39 @@ export default function AdminCustomers() {
       </div>
 
       {/* Filters */}
-      <Card className="shadow-card mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="dealer">Dealers</SelectItem>
-                <SelectItem value="retail">Retail</SelectItem>
-              </SelectContent>
-            </Select>
+      <Card className="mb-6">
+        <CardContent className="pt-6 flex gap-4 flex-col sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
+
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="dealer">Dealer</SelectItem>
+              <SelectItem value="retail">Retail</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
-      {/* Customers Table */}
-      <Card className="shadow-card">
+      {/* Table */}
+      <Card>
         <CardHeader>
-          <CardTitle>All Customers ({filteredCustomers.length})</CardTitle>
+          <CardTitle>
+            Customers ({filteredCustomers.length})
+          </CardTitle>
         </CardHeader>
+
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
@@ -161,43 +191,63 @@ export default function AdminCustomers() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Business</TableHead>
-                  <TableHead>Referral Code</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Verify</TableHead>
                   <TableHead className="text-right">Wallet</TableHead>
-                  <TableHead>Joined</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     </TableCell>
                   </TableRow>
                 ) : filteredCustomers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8">
                       No customers found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.full_name || "-"}</TableCell>
-                      <TableCell>{customer.email || "-"}</TableCell>
-                      <TableCell>{customer.phone || "-"}</TableCell>
+                  filteredCustomers.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell>{c.full_name || "-"}</TableCell>
+                      <TableCell>{c.email || "-"}</TableCell>
                       <TableCell>
-                        <Badge className={customer.user_type === "dealer" ? "gradient-dealer text-white" : ""}>
-                          {customer.user_type}
+                        <Badge
+                          className={
+                            c.user_type === "dealer"
+                              ? "gradient-dealer text-white"
+                              : ""
+                          }
+                        >
+                          {c.user_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{customer.business_name || "-"}</TableCell>
-                      <TableCell className="font-mono text-sm">{customer.referral_code || "-"}</TableCell>
-                      <TableCell className="text-right">₹{customer.wallet_balance}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(customer.created_at).toLocaleDateString()}
+                      <TableCell>
+                        {c.is_verified ? (
+                          <Badge className="bg-green-600">Verified</Badge>
+                        ) : (
+                          <Badge variant="destructive">Pending</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {c.user_type === "dealer" ? (
+                          <Switch
+                            checked={c.is_verified}
+                            onCheckedChange={(val) =>
+                              toggleVerify(c.id, val)
+                            }
+                          />
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ₹{c.wallet_balance}
                       </TableCell>
                     </TableRow>
                   ))

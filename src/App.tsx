@@ -3,8 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+
 import Index from "./pages/Index";
 import QuickOrder from "./pages/QuickOrder";
 import Auth from "./pages/Auth";
@@ -21,6 +22,43 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+/* ===============================
+   DEALER ACCESS GUARD
+================================ */
+const DealerGuard = ({ children }: { children: JSX.Element }) => {
+  const {
+    profile,
+    isVerifiedDealer,
+    isPendingDealer,
+    isLoading,
+  } = useAuth();
+
+  if (isLoading) return null;
+
+  // Dealer pending verification
+  if (isPendingDealer) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">
+            Your dealer account is pending verification
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Please wait for admin approval.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Dealer but NOT verified → block
+  if (profile?.user_type === "dealer" && !isVerifiedDealer) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -31,7 +69,17 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/quick-order" element={<QuickOrder />} />
+
+              {/* QUICK ORDER – PROTECTED */}
+              <Route
+                path="/quick-order"
+                element={
+                  <DealerGuard>
+                    <QuickOrder />
+                  </DealerGuard>
+                }
+              />
+
               <Route path="/products" element={<Navigate to="/quick-order" replace />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -42,8 +90,10 @@ const App = () => (
               <Route path="/account" element={<Account />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+
+              {/* ADMIN ROUTES */}
               <Route path="/admin/*" element={<Admin />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
