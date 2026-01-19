@@ -4,23 +4,23 @@ import logo from "@/assets/logo.png";
 
 export default function Footer() {
   return (
-    <footer className="gradient-dark text-card py-16">
+    <footer className="gradient-dark text-card py-10 sm:py-16">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-12">
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
           {/* Brand */}
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2">
             <Link to="/" className="flex items-center gap-3 mb-4">
-              <img src={logo} alt="GKP Crackers" className="h-12 w-12 rounded-lg" />
+              <img src={logo} alt="GKP Crackers" className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg" />
               <div>
-                <h3 className="text-xl font-bold text-gradient-gold">GKP CRACKERS</h3>
-                <p className="text-sm text-card/70">Best Quality at Best Price</p>
+                <h3 className="text-lg sm:text-xl font-bold text-gradient-gold">GKP CRACKERS</h3>
+                <p className="text-xs sm:text-sm text-card/70">Best Quality at Best Price</p>
               </div>
             </Link>
-            <p className="text-card/70 mb-4 max-w-md">
+            <p className="text-sm sm:text-base text-card/70 mb-4 max-w-md">
               Your trusted partner for premium quality crackers from Sivakasi. 
               Serving customers across India with the best products and prices for over 25 years.
             </p>
-            <p className="text-sm text-card/50">GST: 33GKPPK8032R</p>
+            <p className="text-xs sm:text-sm text-card/50">GST: 33GKPPK8032R</p>
           </div>
 
           {/* Quick Links */}
