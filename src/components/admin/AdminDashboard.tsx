@@ -139,47 +139,49 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to GKP Crackers Admin Panel</p>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Welcome to GKP Crackers Admin Panel</p>
         </div>
         <div className="flex gap-2">
           <Link to="/admin/products">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Product
+            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Add Product</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </Link>
           <Link to="/admin/announcements">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Bell className="h-4 w-4" />
-              Announcements
+            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Announcements</span>
+              <span className="sm:hidden">News</span>
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
         {statCards.map((stat) => (
           <Link key={stat.title} to={stat.link}>
-            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer group">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer group h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${stat.color} group-hover:scale-110 transition-transform`}>
-                  <stat.icon className="h-5 w-5" />
+                <div className={`p-1.5 sm:p-2 rounded-lg ${stat.color} group-hover:scale-110 transition-transform`}>
+                  <stat.icon className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold">
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xl sm:text-3xl font-bold truncate">
                     {isLoading ? "..." : stat.value}
                   </div>
                   {stat.badge && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap">
                       {stat.badge}
                     </Badge>
                   )}

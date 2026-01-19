@@ -30,17 +30,17 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md shadow-card">
-      <nav className="container mx-auto flex items-center justify-between py-4 px-4 lg:px-8">
+      <nav className="container mx-auto flex items-center justify-between py-3 sm:py-4 px-3 sm:px-4 lg:px-8">
         {/* Logo & Brand */}
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
           <img 
             src={logo} 
             alt="GKP Crackers" 
-            className="h-12 w-12 rounded-lg object-contain group-hover:scale-110 transition-transform"
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-contain group-hover:scale-110 transition-transform"
           />
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-gradient-hero">GKP CRACKERS</h1>
-            <p className="text-xs text-muted-foreground">Best Quality at Best Price</p>
+            <h1 className="text-lg sm:text-xl font-bold text-gradient-hero">GKP CRACKERS</h1>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Best Quality at Best Price</p>
           </div>
         </Link>
 
@@ -74,13 +74,13 @@ export default function Header() {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <Link to="/cart" className="relative">
-            <Button variant="ghost" size="icon">
-              <ShoppingCart className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-accent text-accent-foreground text-[10px] sm:text-xs flex items-center justify-center font-bold">
                 {totalItems > 99 ? "99+" : totalItems}
               </span>
             )}
