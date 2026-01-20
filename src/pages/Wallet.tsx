@@ -8,7 +8,7 @@ import { TransactionHistory } from "@/components/wallet/TransactionHistory";
 import { ReferralCard } from "@/components/referral/ReferralCard";
 import { ReferralHistory } from "@/components/referral/ReferralHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet as WalletIcon, Users } from "lucide-react";
+import { Wallet as WalletIcon, Users, Sparkles } from "lucide-react";
 
 export default function Wallet() {
   const { user, profile, isLoading } = useAuth();
@@ -22,8 +22,11 @@ export default function Wallet() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">Loading your wallet...</p>
+        </div>
       </div>
     );
   }
@@ -36,34 +39,45 @@ export default function Wallet() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">My Wallet & Referrals</h1>
+      <main className="flex-1 container mx-auto px-4 py-6 sm:py-8">
+        {/* Page Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Wallet & Referrals</h1>
+          </div>
+          <p className="text-muted-foreground ml-12 sm:ml-14">
+            Manage your balance and earn rewards
+          </p>
+        </div>
         
         <Tabs defaultValue="wallet" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="wallet" className="flex items-center gap-2">
+          <TabsList className="grid w-full max-w-md grid-cols-2 h-12">
+            <TabsTrigger value="wallet" className="flex items-center gap-2 h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <WalletIcon className="h-4 w-4" />
-              Wallet
+              <span className="font-medium">Wallet</span>
             </TabsTrigger>
-            <TabsTrigger value="referrals" className="flex items-center gap-2">
+            <TabsTrigger value="referrals" className="flex items-center gap-2 h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="h-4 w-4" />
-              Referrals
+              <span className="font-medium">Referrals</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="wallet" className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
+          <TabsContent value="wallet" className="space-y-6 mt-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
                 <WalletBalance balance={profile?.wallet_balance || 0} />
               </div>
-              <div className="md:col-span-2">
+              <div className="lg:col-span-2">
                 <TransactionHistory />
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="referrals" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+          <TabsContent value="referrals" className="space-y-6 mt-6">
+            <div className="grid lg:grid-cols-2 gap-6">
               <ReferralCard />
               <ReferralHistory />
             </div>

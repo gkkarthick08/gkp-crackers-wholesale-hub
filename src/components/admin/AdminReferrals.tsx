@@ -3,16 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
-import { Gift, Search, Users, TrendingUp, DollarSign, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { Gift, Search, Users, TrendingUp, DollarSign, CheckCircle, Clock, Loader2, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -62,7 +55,6 @@ export default function AdminReferrals() {
     try {
       setIsLoading(true);
       
-      // Fetch referrals
       const { data: referralData, error: referralError } = await supabase
         .from("referrals")
         .select("*")
@@ -70,12 +62,10 @@ export default function AdminReferrals() {
 
       if (referralError) throw referralError;
 
-      // Fetch all unique user IDs
       const referrerIds = [...new Set(referralData?.map(r => r.referrer_id).filter(Boolean) || [])];
       const referredIds = [...new Set(referralData?.map(r => r.referred_id).filter(Boolean) || [])];
       const allUserIds = [...new Set([...referrerIds, ...referredIds])];
 
-      // Fetch profiles for all users
       let profilesMap: Record<string, { full_name: string; email: string | null; referral_code: string | null }> = {};
       
       if (allUserIds.length > 0) {
@@ -92,7 +82,6 @@ export default function AdminReferrals() {
         }
       }
 
-      // Enrich referral data with user info
       const enrichedReferrals = (referralData || []).map(r => ({
         ...r,
         referrer: r.referrer_id ? profilesMap[r.referrer_id] : undefined,
@@ -101,7 +90,6 @@ export default function AdminReferrals() {
 
       setReferrals(enrichedReferrals);
 
-      // Calculate stats
       const total = referralData?.length || 0;
       const claimed = referralData?.filter(r => r.is_claimed).length || 0;
       const totalPaid = referralData?.filter(r => r.is_claimed).reduce((sum, r) => sum + (r.bonus_amount || 0), 0) || 0;
@@ -172,57 +160,54 @@ export default function AdminReferrals() {
 
   const statCards = [
     {
-      title: "Total Referrals",
+      title: "Total",
       value: stats.totalReferrals,
       icon: Users,
-      color: "bg-primary/10 text-primary",
+      className: "bg-primary/5 border-primary/20 text-primary",
     },
     {
       title: "Claimed",
       value: stats.claimedReferrals,
       icon: CheckCircle,
-      color: "bg-green-500/10 text-green-600",
+      className: "bg-green-500/5 border-green-500/20 text-green-600",
     },
     {
       title: "Pending",
       value: stats.pendingReferrals,
       icon: Clock,
-      color: "bg-yellow-500/10 text-yellow-600",
+      className: "bg-amber-500/5 border-amber-500/20 text-amber-600",
     },
     {
-      title: "Total Bonus Paid",
+      title: "Paid",
       value: `₹${stats.totalBonusPaid.toLocaleString()}`,
       icon: DollarSign,
-      color: "bg-dealer/10 text-dealer",
+      className: "bg-dealer/5 border-dealer/20 text-dealer",
     },
   ];
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <Gift className="h-8 w-8 text-primary" />
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+          <Gift className="h-7 w-7 text-primary" />
           Referral Management
         </h1>
-        <p className="text-muted-foreground">
-          Track and manage all user referrals and bonuses
-        </p>
+        <p className="text-muted-foreground mt-1">Track and manage all referrals and bonuses</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {isLoading ? "..." : stat.value}
-                  </p>
+          <Card key={stat.title} className={stat.className}>
+            <CardContent className="py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-current/10">
+                  <stat.icon className="h-5 w-5" />
                 </div>
-                <div className={`p-3 rounded-xl ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
+                <div>
+                  <p className="text-xs text-muted-foreground">{stat.title}</p>
+                  <p className="text-xl font-bold">{isLoading ? "..." : stat.value}</p>
                 </div>
               </div>
             </CardContent>
@@ -230,114 +215,124 @@ export default function AdminReferrals() {
         ))}
       </div>
 
-      {/* Referrals Table */}
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, email, or code..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 h-11"
+        />
+      </div>
+
+      {/* Referrals List */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            All Referrals
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            All Referrals ({filteredReferrals.length})
           </CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredReferrals.length === 0 ? (
             <div className="text-center py-12">
-              <Gift className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <Gift className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
               <p className="text-muted-foreground">
                 {searchQuery ? "No referrals match your search" : "No referrals yet"}
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Referrer</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Referred User</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Bonus</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredReferrals.map((referral) => (
-                    <TableRow key={referral.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">
-                            {referral.referrer?.full_name || "Unknown"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {referral.referrer?.email || "No email"}
-                          </p>
+            <ScrollArea className="h-[500px]">
+              <div className="divide-y divide-border">
+                {filteredReferrals.map((referral) => (
+                  <div key={referral.id} className="p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex flex-col gap-3">
+                      {/* Referrer & Referred */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        {/* Referrer */}
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <UserPlus className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">
+                              {referral.referrer?.full_name || "Unknown"}
+                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">
+                                {referral.referrer?.referral_code || "N/A"}
+                              </code>
+                              <span className="text-xs text-muted-foreground">referred</span>
+                            </div>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="bg-muted px-2 py-1 rounded text-xs font-mono">
-                          {referral.referrer?.referral_code || "N/A"}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">
-                            {referral.referred?.full_name || "Unknown"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {referral.referred?.email || "No email"}
-                          </p>
+
+                        {/* Arrow on desktop */}
+                        <span className="hidden sm:block text-muted-foreground">→</span>
+
+                        {/* Referred */}
+                        <div className="flex items-center gap-3 flex-1 min-w-0 sm:pl-0 pl-13">
+                          <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                            <Users className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">
+                              {referral.referred?.full_name || "Unknown"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(referral.created_at), "dd MMM yyyy")}
+                            </p>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(referral.created_at), "dd MMM yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold text-green-600">
-                          ₹{referral.bonus_amount || 50}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={referral.is_claimed ? "default" : "secondary"}>
-                          {referral.is_claimed ? "Claimed" : "Pending"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
+                      </div>
+
+                      {/* Bonus & Action */}
+                      <div className="flex items-center justify-between pl-13 sm:pl-0">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-green-600">
+                            ₹{referral.bonus_amount || 50}
+                          </span>
+                          <Badge 
+                            variant="outline"
+                            className={referral.is_claimed 
+                              ? "bg-green-500/10 text-green-600 border-green-500/20" 
+                              : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                            }
+                          >
+                            {referral.is_claimed ? "Claimed" : "Pending"}
+                          </Badge>
+                        </div>
+                        
                         {!referral.is_claimed && (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleClaimBonus(referral.id)}
                             disabled={processingId === referral.id}
+                            className="gap-2"
                           >
                             {processingId === referral.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <>
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Claim
+                                <CheckCircle className="h-4 w-4" />
+                                <span className="hidden sm:inline">Claim Bonus</span>
+                                <span className="sm:hidden">Claim</span>
                               </>
                             )}
                           </Button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
