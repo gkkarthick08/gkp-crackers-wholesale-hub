@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { validateCustomerDetails } from "@/lib/validations";
 
 interface SiteSettings {
   minOrderValue: number;
@@ -32,6 +33,7 @@ export default function Cart() {
     address: profile?.address || "",
     notes: ""
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [useWallet, setUseWallet] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [minOrderValue, setMinOrderValue] = useState(500);
@@ -85,14 +87,19 @@ export default function Cart() {
   const savingsPercentage = totalMrp > 0 ? Math.round((totalSavings / totalMrp) * 100) : 0;
 
   const sendToWhatsApp = () => {
-    if (!customerDetails.name || !customerDetails.phone || !customerDetails.address) {
+    // Validate customer details using schema
+    const validation = validateCustomerDetails(customerDetails);
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
       toast({
-        title: "Please fill all details",
-        description: "Name, phone and address are required.",
+        title: "Please check your details",
+        description: firstError,
         variant: "destructive"
       });
       return;
     }
+    setFieldErrors({});
 
     if (!isMinOrderMet) {
       toast({
@@ -146,14 +153,19 @@ export default function Cart() {
   };
 
   const placeOrder = async () => {
-    if (!customerDetails.name || !customerDetails.phone || !customerDetails.address) {
+    // Validate customer details using schema
+    const validation = validateCustomerDetails(customerDetails);
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
       toast({
-        title: "Please fill all details",
-        description: "Name, phone and address are required.",
+        title: "Please check your details",
+        description: firstError,
         variant: "destructive"
       });
       return;
     }
+    setFieldErrors({});
 
     if (!isMinOrderMet) {
       toast({
@@ -414,9 +426,17 @@ export default function Cart() {
                   <Input
                     id="name"
                     placeholder="Enter your name"
+                    maxLength={100}
                     value={customerDetails.name}
-                    onChange={(e) => setCustomerDetails(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => {
+                      setCustomerDetails(prev => ({ ...prev, name: e.target.value }));
+                      if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: "" }));
+                    }}
+                    className={fieldErrors.name ? "border-destructive" : ""}
                   />
+                  {fieldErrors.name && (
+                    <p className="text-sm text-destructive">{fieldErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number *</Label>
@@ -425,11 +445,18 @@ export default function Cart() {
                     <Input
                       id="phone"
                       placeholder="+91 XXXXXXXXXX"
-                      className="pl-10"
+                      className={`pl-10 ${fieldErrors.phone ? "border-destructive" : ""}`}
+                      maxLength={15}
                       value={customerDetails.phone}
-                      onChange={(e) => setCustomerDetails(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => {
+                        setCustomerDetails(prev => ({ ...prev, phone: e.target.value }));
+                        if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: "" }));
+                      }}
                     />
                   </div>
+                  {fieldErrors.phone && (
+                    <p className="text-sm text-destructive">{fieldErrors.phone}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="address">Delivery Address *</Label>
@@ -438,17 +465,25 @@ export default function Cart() {
                     <Textarea
                       id="address"
                       placeholder="Enter complete address"
-                      className="pl-10 min-h-[80px]"
+                      className={`pl-10 min-h-[80px] ${fieldErrors.address ? "border-destructive" : ""}`}
+                      maxLength={500}
                       value={customerDetails.address}
-                      onChange={(e) => setCustomerDetails(prev => ({ ...prev, address: e.target.value }))}
+                      onChange={(e) => {
+                        setCustomerDetails(prev => ({ ...prev, address: e.target.value }));
+                        if (fieldErrors.address) setFieldErrors(prev => ({ ...prev, address: "" }));
+                      }}
                     />
                   </div>
+                  {fieldErrors.address && (
+                    <p className="text-sm text-destructive">{fieldErrors.address}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="notes">Order Notes (Optional)</Label>
                   <Textarea
                     id="notes"
                     placeholder="Any special instructions..."
+                    maxLength={1000}
                     value={customerDetails.notes}
                     onChange={(e) => setCustomerDetails(prev => ({ ...prev, notes: e.target.value }))}
                   />
