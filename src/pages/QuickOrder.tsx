@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Minus, ShoppingCart, Filter } from "lucide-react";
+import { Search, Plus, Minus, ShoppingCart, Filter, Package, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -46,7 +47,6 @@ export default function QuickOrder() {
 
   const isDealer = profile?.user_type === "dealer";
 
-  // Fetch products and categories
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -127,7 +127,6 @@ export default function QuickOrder() {
       return;
     }
     
-    // Add each item to cart
     itemsToAdd.forEach(product => {
       const qty = quantities[product.id];
       addItem({
@@ -145,14 +144,10 @@ export default function QuickOrder() {
       description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} added.`,
     });
     
-    // Reset quantities after adding
     setQuantities({});
-    
-    // Navigate to cart
     navigate("/cart");
   };
 
-  // Emoji map for products
   const getProductEmoji = (categoryName: string | undefined) => {
     const emojiMap: Record<string, string> = {
       "Ground Chakkar": "🌀",
@@ -171,108 +166,103 @@ export default function QuickOrder() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8 pb-32">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold mb-2">
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
             Quick Order <span className="text-gradient-hero">Table</span>
           </h1>
-          <p className="text-muted-foreground">
-            Add products quickly using our Excel-style order table. 
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Add products quickly using our Excel-style order table
+            </p>
             {isDealer ? (
-              <Badge variant="secondary" className="ml-2 gradient-dealer text-white">Wholesale Prices</Badge>
+              <Badge variant="secondary" className="gradient-dealer text-white">Wholesale</Badge>
             ) : (
-              <Badge variant="secondary" className="ml-2">Retail Prices</Badge>
+              <Badge variant="secondary">Retail</Badge>
             )}
-          </p>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or product ID..."
+              placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-11"
             />
           </div>
-          <div className="flex gap-2">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Categories</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full sm:w-[180px] h-11">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Categories</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Product Table */}
-        <div className="bg-card rounded-2xl shadow-card border border-border overflow-hidden mb-6">
+        {/* Desktop Table View */}
+        <div className="hidden md:block bg-card rounded-2xl shadow-card border border-border overflow-hidden mb-6">
           <div className="overflow-x-auto">
             <table className="quick-order-table">
               <thead>
                 <tr>
-                  <th className="w-16">S.No</th>
-                  <th className="w-20">Image</th>
-                  <th>Product Name</th>
+                  <th className="w-14">#</th>
+                  <th className="w-16">-</th>
+                  <th>Product</th>
                   <th className="w-24">Brand</th>
-                  <th className="w-28 text-right">MRP</th>
-                  <th className="w-28 text-right">
-                    {isDealer ? "Wholesale" : "Sale Price"}
-                  </th>
-                  <th className="w-36 text-center">Quantity</th>
+                  <th className="w-24 text-right">MRP</th>
+                  <th className="w-28 text-right">{isDealer ? "Wholesale" : "Price"}</th>
+                  <th className="w-40 text-center">Quantity</th>
                   <th className="w-28 text-right">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Loading products...
+                    <td colSpan={8} className="text-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                      <p className="text-muted-foreground mt-2">Loading products...</p>
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No products found
+                    <td colSpan={8} className="text-center py-12">
+                      <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground">No products found</p>
                     </td>
                   </tr>
                 ) : (
                   filteredProducts.map((product, index) => {
                     const qty = quantities[product.id] || 0;
                     const amount = qty * getPrice(product);
+                    const discount = Math.round(((product.mrp - getPrice(product)) / product.mrp) * 100);
                     return (
                       <tr key={product.id} className={qty > 0 ? "bg-primary/5" : ""}>
-                        <td className="text-center text-muted-foreground">{index + 1}</td>
-                        <td className="text-center text-3xl">
-                          {getProductEmoji(product.category?.name)}
-                        </td>
+                        <td className="text-center text-muted-foreground text-sm">{index + 1}</td>
+                        <td className="text-center text-2xl">{getProductEmoji(product.category?.name)}</td>
                         <td>
                           <div>
-                            <p className="font-medium">{product.name}</p>
+                            <p className="font-medium text-sm">{product.name}</p>
                             <p className="text-xs text-muted-foreground">ID: {product.product_code}</p>
                           </div>
                         </td>
                         <td>
-                          <Badge variant="outline">{product.brand?.name || "N/A"}</Badge>
+                          <Badge variant="outline" className="text-xs">{product.brand?.name || "N/A"}</Badge>
                         </td>
-                        <td className="text-right text-muted-foreground line-through text-sm">
-                          ₹{product.mrp}
-                        </td>
+                        <td className="text-right text-muted-foreground line-through text-sm">₹{product.mrp}</td>
                         <td className="text-right">
                           <div className="flex flex-col items-end">
-                            <span className="font-semibold text-primary">₹{getPrice(product)}</span>
-                            <span className="text-xs text-green-600 font-medium">
-                              {Math.round(((product.mrp - getPrice(product)) / product.mrp) * 100)}% OFF
-                            </span>
+                            <span className="font-bold text-primary">₹{getPrice(product)}</span>
+                            <span className="text-xs text-green-600 font-medium">{discount}% OFF</span>
                           </div>
                         </td>
                         <td>
@@ -302,7 +292,7 @@ export default function QuickOrder() {
                             </Button>
                           </div>
                         </td>
-                        <td className="text-right font-bold">
+                        <td className="text-right font-bold text-primary">
                           {amount > 0 ? `₹${amount.toLocaleString()}` : "-"}
                         </td>
                       </tr>
@@ -314,32 +304,123 @@ export default function QuickOrder() {
           </div>
         </div>
 
-        {/* Sticky Bottom Bar */}
-        <div className="sticky bottom-0 bg-card/95 backdrop-blur-md rounded-t-2xl shadow-lg border border-border p-4 -mx-4">
-          <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-xl font-bold">{totalItems}</p>
-              </div>
-              <div className="h-10 w-px bg-border" />
-              <div>
-                <p className="text-sm text-muted-foreground">Estimated Total</p>
-                <p className="text-2xl font-bold text-gradient-hero">₹{totalAmount.toLocaleString()}</p>
-              </div>
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3 mb-6">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground mt-2">Loading products...</p>
             </div>
-            <Button 
-              variant="hero" 
-              size="lg" 
-              className="gap-2 w-full sm:w-auto"
-              onClick={addToEstimate}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              Add to Estimate Cart
-            </Button>
-          </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No products found</p>
+            </div>
+          ) : (
+            filteredProducts.map((product) => {
+              const qty = quantities[product.id] || 0;
+              const amount = qty * getPrice(product);
+              const discount = Math.round(((product.mrp - getPrice(product)) / product.mrp) * 100);
+              return (
+                <Card 
+                  key={product.id} 
+                  className={`overflow-hidden transition-all ${qty > 0 ? "border-primary/50 bg-primary/5" : ""}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex gap-3">
+                      {/* Product Icon/Image */}
+                      <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center text-2xl shrink-0">
+                        {getProductEmoji(product.category?.name)}
+                      </div>
+                      
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">{product.product_code}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs shrink-0">{product.brand?.name || "N/A"}</Badge>
+                        </div>
+                        
+                        {/* Pricing */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="font-bold text-primary">₹{getPrice(product)}</span>
+                          <span className="text-xs text-muted-foreground line-through">₹{product.mrp}</span>
+                          <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                            {discount}% OFF
+                          </Badge>
+                        </div>
+                        
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9"
+                              onClick={() => updateQuantity(product.id, -1)}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={qty}
+                              onChange={(e) => setQuantity(product.id, e.target.value)}
+                              className="w-16 h-9 text-center font-medium"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9"
+                              onClick={() => updateQuantity(product.id, 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          {amount > 0 && (
+                            <p className="font-bold text-primary">₹{amount.toLocaleString()}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
       </main>
+
+      {/* Sticky Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border p-4 z-40">
+        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="text-center sm:text-left">
+              <p className="text-xs text-muted-foreground">Items</p>
+              <p className="text-xl font-bold">{totalItems}</p>
+            </div>
+            <div className="h-8 w-px bg-border hidden sm:block" />
+            <div className="text-center sm:text-left">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xl sm:text-2xl font-bold text-gradient-hero">₹{totalAmount.toLocaleString()}</p>
+            </div>
+          </div>
+          <Button 
+            variant="hero" 
+            size="lg" 
+            className="gap-2 w-full sm:w-auto h-12"
+            onClick={addToEstimate}
+            disabled={totalItems === 0}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            Add to Cart
+          </Button>
+        </div>
+      </div>
+
       <Footer />
       <FloatingButtons />
     </div>

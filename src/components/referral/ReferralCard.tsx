@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { Copy, Share2, Users, Check, Gift, Sparkles, MessageCircle } from "lucide-react";
+import { Copy, Share2, Users, Check, Gift, Sparkles, MessageCircle, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export function ReferralCard() {
@@ -50,93 +50,95 @@ export function ReferralCard() {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-primary/10">
-            <Gift className="h-6 w-6 text-primary" />
+    <Card className="overflow-hidden border-0 shadow-lg">
+      {/* Header with gradient */}
+      <div className="bg-gradient-to-r from-primary via-accent to-secondary p-5 relative overflow-hidden">
+        <div className="absolute top-2 right-2">
+          <Sparkles className="h-8 w-8 text-white/20 animate-sparkle" />
+        </div>
+        <div className="absolute bottom-0 right-0 w-24 h-24 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2" />
+        
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm">
+            <Gift className="h-7 w-7 text-white" />
           </div>
           <div>
-            <h3 className="font-bold text-lg">Refer & Earn</h3>
-            <p className="text-sm text-muted-foreground">Earn ₹50 for each referral!</p>
+            <h3 className="font-bold text-xl text-white">Refer & Earn</h3>
+            <p className="text-sm text-white/80">Earn ₹50 for each referral!</p>
           </div>
         </div>
       </div>
       
-      <CardContent className="space-y-4 pt-4">
-        {/* Referral Code */}
-        <div className="bg-primary/5 p-4 rounded-xl border border-primary/20">
-          <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
+      <CardContent className="space-y-5 pt-5">
+        {/* Referral Code Display */}
+        <div className="bg-gradient-to-br from-primary/5 to-accent/5 p-4 rounded-2xl border border-primary/10">
+          <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
             Your Referral Code
           </p>
           <div className="flex gap-2">
             <Input
               value={referralCode}
               readOnly
-              className="font-mono text-xl font-bold text-center bg-background"
+              className="font-mono text-xl font-bold text-center bg-background border-2 border-dashed border-primary/30"
             />
             <Button
               variant="outline"
               size="icon"
               onClick={() => copyToClipboard(referralCode, "Referral code")}
-              className="shrink-0"
+              className="shrink-0 h-11 w-11 border-primary/30 hover:bg-primary/10"
             >
               {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
+                <Check className="h-5 w-5 text-green-500" />
               ) : (
-                <Copy className="h-4 w-4" />
+                <Copy className="h-5 w-5 text-primary" />
               )}
             </Button>
           </div>
         </div>
 
         {/* Share Options */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Share with friends</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={shareReferral} variant="outline" className="gap-2">
-              <Share2 className="h-4 w-4" />
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-foreground">Share with friends</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              onClick={shareReferral} 
+              variant="outline" 
+              className="gap-2 h-12 border-2 hover:bg-muted"
+            >
+              <Share2 className="h-5 w-5" />
               Share Link
             </Button>
-            <Button onClick={shareOnWhatsApp} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
-              <MessageCircle className="h-4 w-4" />
+            <Button 
+              onClick={shareOnWhatsApp} 
+              className="gap-2 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white border-0"
+            >
+              <MessageCircle className="h-5 w-5" />
               WhatsApp
             </Button>
           </div>
         </div>
 
         {/* How it works */}
-        <div className="bg-muted/50 p-4 rounded-xl">
-          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+        <div className="bg-muted/50 p-4 rounded-2xl">
+          <p className="text-sm font-semibold mb-4 flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
             How it works
           </p>
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
-                1
+            {[
+              "Share your unique referral code",
+              "Friends sign up using your code",
+              "You earn ₹50, they get ₹25!"
+            ].map((step, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
+                  {index + 1}
+                </div>
+                <p className="text-sm text-muted-foreground flex-1">{step}</p>
+                {index < 2 && <ChevronRight className="h-4 w-4 text-muted-foreground/50" />}
               </div>
-              <p className="text-sm text-muted-foreground">
-                Share your unique referral code with friends
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
-                2
-              </div>
-              <p className="text-sm text-muted-foreground">
-                They sign up using your code
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
-                3
-              </div>
-              <p className="text-sm text-muted-foreground">
-                <span className="text-foreground font-medium">You earn ₹50</span> and they get <span className="text-foreground font-medium">₹25</span>!
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </CardContent>
