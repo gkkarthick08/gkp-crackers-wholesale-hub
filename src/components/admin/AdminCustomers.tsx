@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Loader2, User, Building2, CheckCircle, Clock, Shield, Phone, Mail } from "lucide-react";
+import { Search, Loader2, User, Building2, CheckCircle, Clock, Shield, Phone, Mail, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +100,33 @@ export default function AdminCustomers() {
       fetchCustomers();
       if (selectedCustomer?.id === id) {
         setSelectedCustomer(prev => prev ? { ...prev, is_verified: value } : null);
+      }
+    }
+  };
+
+  const changeUserType = async (id: string, newType: "dealer" | "retail") => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ 
+        user_type: newType,
+        is_verified: newType === "retail" ? false : false // Reset verification when changing type
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error changing user type",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "User type updated",
+        description: `Customer is now a ${newType}${newType === "dealer" ? " (pending verification)" : ""}`,
+      });
+      fetchCustomers();
+      if (selectedCustomer?.id === id) {
+        setSelectedCustomer(prev => prev ? { ...prev, user_type: newType, is_verified: false } : null);
       }
     }
   };
@@ -504,6 +531,33 @@ export default function AdminCustomers() {
                   <p className="text-sm font-medium">
                     {format(new Date(selectedCustomer.created_at), "dd MMM yyyy")}
                   </p>
+                </div>
+              </div>
+
+              {/* User Type Change */}
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Change Customer Type
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Switch between retail and dealer account
+                    </p>
+                  </div>
+                  <Select
+                    value={selectedCustomer.user_type}
+                    onValueChange={(val: "dealer" | "retail") => changeUserType(selectedCustomer.id, val)}
+                  >
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="retail">Retail</SelectItem>
+                      <SelectItem value="dealer">Dealer</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -243,6 +243,7 @@ export type Database = {
           retail_price: number
           stock: number | null
           updated_at: string | null
+          video_url: string | null
           wholesale_price: number
         }
         Insert: {
@@ -261,6 +262,7 @@ export type Database = {
           retail_price: number
           stock?: number | null
           updated_at?: string | null
+          video_url?: string | null
           wholesale_price: number
         }
         Update: {
@@ -279,6 +281,7 @@ export type Database = {
           retail_price?: number
           stock?: number | null
           updated_at?: string | null
+          video_url?: string | null
           wholesale_price?: number
         }
         Relationships: [
