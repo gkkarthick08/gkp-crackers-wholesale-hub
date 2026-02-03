@@ -35,24 +35,51 @@ export default function ResetPassword() {
   useEffect(() => {
     // Check if we have a valid recovery session
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Check for recovery mode in URL hash
+      // First check for hash parameters (implicit flow - older method)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       const type = hashParams.get('type');
       
       if (type === 'recovery' && accessToken) {
-        // Set the session from the recovery token
+        // Set the session from the recovery token (hash flow)
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: hashParams.get('refresh_token') || '',
         });
         
         if (error) {
+          console.error("Error setting session from hash:", error);
           setIsValidToken(false);
         }
-      } else if (!session) {
+        return;
+      }
+      
+      // Check for query parameters (PKCE flow - newer method)
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const errorParam = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
+      
+      if (errorParam) {
+        console.error("Auth error:", errorParam, errorDescription);
+        setIsValidToken(false);
+        return;
+      }
+      
+      if (code) {
+        // Exchange code for session (PKCE flow)
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (error) {
+          console.error("Error exchanging code for session:", error);
+          setIsValidToken(false);
+        }
+        return;
+      }
+      
+      // Check if there's already an active session (user might have already authenticated)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         setIsValidToken(false);
       }
     };
