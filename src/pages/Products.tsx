@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, ShoppingCart, Plus, Minus, Grid3X3, Star } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus, Grid3X3, Star, Clock } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -41,11 +42,12 @@ export default function Products() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { profile } = useAuth();
+  const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
   const { addItem, totalItems } = useCart();
   const navigate = useNavigate();
 
-  const isDealer = profile?.user_type === "dealer";
+  // Only verified dealers see wholesale prices
+  const showWholesalePrice = isVerifiedDealer;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,7 +104,7 @@ export default function Products() {
   };
 
   const getPrice = (product: Product) => {
-    return isDealer ? product.wholesale_price : product.retail_price;
+    return showWholesalePrice ? product.wholesale_price : product.retail_price;
   };
 
   const getDiscountPercent = (product: Product) => {
@@ -162,13 +164,29 @@ export default function Products() {
           </div>
           <p className="text-sm sm:text-base text-muted-foreground">
             Browse our premium collection of crackers. 
-            {isDealer ? (
+            {isVerifiedDealer ? (
               <Badge variant="secondary" className="ml-2 gradient-dealer text-white text-xs">Wholesale Prices</Badge>
+            ) : isPendingDealer ? (
+              <Badge variant="secondary" className="ml-2 bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
+                <Clock className="h-3 w-3 mr-1 inline" />
+                Verification Pending
+              </Badge>
             ) : (
               <Badge variant="secondary" className="ml-2 text-xs">Retail Prices</Badge>
             )}
           </p>
         </div>
+
+        {/* Pending Dealer Alert */}
+        {isPendingDealer && (
+          <Alert className="mb-6 border-amber-500/30 bg-amber-500/10">
+            <Clock className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-700">Retail Prices Displayed</AlertTitle>
+            <AlertDescription className="text-amber-600">
+              You're currently seeing retail prices. Once your dealer account is verified, you'll have access to exclusive wholesale pricing. Your verification is under process.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
