@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Loader2, Upload, X, Image as ImageIcon, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,7 @@ interface Product {
   name: string;
   description: string | null;
   image_url: string | null;
+  video_url: string | null;
   mrp: number;
   retail_price: number;
   wholesale_price: number;
@@ -85,6 +86,7 @@ export default function AdminProducts() {
     brand_id: "",
     is_visible: true,
     image_url: "",
+    video_url: "",
   });
 
   const fetchData = async () => {
@@ -133,6 +135,7 @@ export default function AdminProducts() {
       brand_id: "",
       is_visible: true,
       image_url: "",
+      video_url: "",
     });
     setImageFile(null);
     setImagePreview(null);
@@ -154,6 +157,7 @@ export default function AdminProducts() {
       brand_id: product.brand_id || "",
       is_visible: product.is_visible,
       image_url: product.image_url || "",
+      video_url: product.video_url || "",
     });
     setImageFile(null);
     setImagePreview(product.image_url || null);
@@ -263,6 +267,7 @@ export default function AdminProducts() {
           category_id: formData.category_id || null,
           brand_id: formData.brand_id || null,
           is_visible: formData.is_visible,
+          video_url: formData.video_url || null,
         };
 
         const { data: newProduct, error } = await supabase
@@ -303,6 +308,7 @@ export default function AdminProducts() {
           brand_id: formData.brand_id || null,
           is_visible: formData.is_visible,
           image_url: imageUrl || null,
+          video_url: formData.video_url || null,
         };
 
         const { error } = await supabase
@@ -551,6 +557,32 @@ export default function AdminProducts() {
                   <Upload className="h-4 w-4" />
                   Choose Image
                 </Button>
+              )}
+            </div>
+
+            {/* Video URL Section */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Embedded Video URL
+              </Label>
+              <Input
+                placeholder="https://www.youtube.com/embed/... or Vimeo embed URL"
+                value={formData.video_url}
+                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste YouTube or Vimeo embed URL (e.g., https://www.youtube.com/embed/VIDEO_ID)
+              </p>
+              {formData.video_url && (
+                <div className="mt-2 rounded-lg overflow-hidden border">
+                  <iframe
+                    src={formData.video_url}
+                    className="w-full h-40"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
               )}
             </div>
 

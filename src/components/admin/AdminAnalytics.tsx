@@ -9,7 +9,8 @@ import {
   Wallet,
   Calendar,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Trophy
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,14 @@ import {
   Cell,
 } from "recharts";
 
+interface TopProduct {
+  id: string;
+  name: string;
+  product_code: string;
+  totalQuantity: number;
+  totalRevenue: number;
+}
+
 interface AnalyticsData {
   totalRevenue: number;
   totalOrders: number;
@@ -43,6 +52,7 @@ interface AnalyticsData {
   ordersByStatus: { status: string; count: number }[];
   revenueByDay: { date: string; revenue: number; orders: number }[];
   customersByType: { type: string; count: number }[];
+  topProducts: TopProduct[];
 }
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
@@ -60,6 +70,7 @@ export default function AdminAnalytics() {
     ordersByStatus: [],
     revenueByDay: [],
     customersByType: [],
+    topProducts: [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState<"week" | "month" | "all">("month");
@@ -88,13 +99,13 @@ export default function AdminAnalytics() {
         }
 
         // Fetch all data in parallel
-        const [ordersRes, profilesRes, productsRes, categoriesRes, prevOrdersRes] = await Promise.all([
+        const [ordersRes, profilesRes, productsRes, categoriesRes, prevOrdersRes, orderItemsRes] = await Promise.all([
           supabase
             .from("orders")
             .select("id, final_amount, status, created_at, user_type")
             .gte("created_at", startDate.toISOString()),
           supabase.from("profiles").select("id, user_type"),
-          supabase.from("products").select("id, category_id"),
+          supabase.from("products").select("id, name, product_code, category_id"),
           supabase.from("categories").select("id, name"),
           period !== "all" 
             ? supabase
@@ -103,6 +114,9 @@ export default function AdminAnalytics() {
                 .gte("created_at", prevStartDate.toISOString())
                 .lte("created_at", prevEndDate.toISOString())
             : Promise.resolve({ data: [] }),
+          supabase
+            .from("order_items")
+            .select("product_id, product_name, product_code, quantity, total_price"),
         ]);
 
         const orders = ordersRes.data || [];
@@ -110,6 +124,7 @@ export default function AdminAnalytics() {
         const products = productsRes.data || [];
         const categories = categoriesRes.data || [];
         const prevOrders = prevOrdersRes.data || [];
+        const orderItems = orderItemsRes.data || [];
 
         // Calculate metrics
         const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
@@ -168,6 +183,27 @@ export default function AdminAnalytics() {
           .sort((a, b) => b.count - a.count)
           .slice(0, 5);
 
+        // Top selling products
+        const productSales: Record<string, { name: string; product_code: string; totalQuantity: number; totalRevenue: number }> = {};
+        orderItems.forEach((item) => {
+          if (item.product_id) {
+            if (!productSales[item.product_id]) {
+              productSales[item.product_id] = {
+                name: item.product_name,
+                product_code: item.product_code || "",
+                totalQuantity: 0,
+                totalRevenue: 0,
+              };
+            }
+            productSales[item.product_id].totalQuantity += item.quantity;
+            productSales[item.product_id].totalRevenue += Number(item.total_price) || 0;
+          }
+        });
+        const topProducts: TopProduct[] = Object.entries(productSales)
+          .map(([id, data]) => ({ id, ...data }))
+          .sort((a, b) => b.totalQuantity - a.totalQuantity)
+          .slice(0, 5);
+
         setData({
           totalRevenue,
           totalOrders: orders.length,
@@ -180,6 +216,7 @@ export default function AdminAnalytics() {
           ordersByStatus,
           revenueByDay,
           customersByType,
+          topProducts,
         });
       } catch (error) {
         console.error("Error fetching analytics:", error);
@@ -485,6 +522,49 @@ export default function AdminAnalytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Selling Products */}
+      <Card className="shadow-card mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            Top Selling Products
+          </CardTitle>
+          <CardDescription>Best performing products by quantity sold</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {data.topProducts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No sales data yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {data.topProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  >
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{product.name}</p>
+                    <p className="text-sm text-muted-foreground">{product.product_code}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-primary">{product.totalQuantity} sold</p>
+                    <p className="text-sm text-muted-foreground">₹{product.totalRevenue.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
