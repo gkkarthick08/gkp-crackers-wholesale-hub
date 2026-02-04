@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Minus, ShoppingCart, Filter, Package, Loader2, Clock } from "lucide-react";
+import { Search, Plus, Minus, ShoppingCart, Filter, Package, Loader2, Clock, Eye } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
+import ProductDetailDialog from "@/components/ProductDetailDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +22,7 @@ interface Product {
   name: string;
   description: string | null;
   image_url: string | null;
+  video_url: string | null;
   mrp: number;
   retail_price: number;
   wholesale_price: number;
@@ -41,6 +43,8 @@ export default function QuickOrder() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { toast } = useToast();
   const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
   const { addItem } = useCart();
@@ -150,6 +154,28 @@ export default function QuickOrder() {
     navigate("/cart");
   };
 
+  const addSingleToCart = (product: Product, qty?: number) => {
+    const quantity = qty || 1;
+    addItem({
+      id: product.id,
+      name: product.name,
+      product_code: product.product_code,
+      price: getPrice(product),
+      mrp: product.mrp,
+      image_url: product.image_url
+    }, quantity);
+
+    toast({
+      title: "Added to Cart!",
+      description: `${product.name} x${quantity} added.`,
+    });
+  };
+
+  const openProductDetail = (product: Product) => {
+    setSelectedProduct(product);
+    setDetailDialogOpen(true);
+  };
+
   const getProductEmoji = (categoryName: string | undefined) => {
     const emojiMap: Record<string, string> = {
       "Ground Chakkar": "🌀",
@@ -234,26 +260,27 @@ export default function QuickOrder() {
               <thead>
                 <tr>
                   <th className="w-14">#</th>
-                  <th className="w-16">-</th>
+                  <th className="w-16">Image</th>
                   <th>Product</th>
                   <th className="w-24">Brand</th>
                   <th className="w-24 text-right">MRP</th>
                   <th className="w-28 text-right">{showWholesalePrice ? "Wholesale" : "Price"}</th>
                   <th className="w-40 text-center">Quantity</th>
                   <th className="w-28 text-right">Amount</th>
+                  <th className="w-16"></th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-12">
+                    <td colSpan={9} className="text-center py-12">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                       <p className="text-muted-foreground mt-2">Loading products...</p>
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-12">
+                    <td colSpan={9} className="text-center py-12">
                       <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                       <p className="text-muted-foreground">No products found</p>
                     </td>
@@ -266,9 +293,27 @@ export default function QuickOrder() {
                     return (
                       <tr key={product.id} className={qty > 0 ? "bg-primary/5" : ""}>
                         <td className="text-center text-muted-foreground text-sm">{index + 1}</td>
-                        <td className="text-center text-2xl">{getProductEmoji(product.category?.name)}</td>
+                        <td className="text-center">
+                          <div 
+                            className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                            onClick={() => openProductDetail(product)}
+                          >
+                            {product.image_url ? (
+                              <img 
+                                src={product.image_url} 
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-lg">{getProductEmoji(product.category?.name)}</span>
+                            )}
+                          </div>
+                        </td>
                         <td>
-                          <div>
+                          <div 
+                            className="cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => openProductDetail(product)}
+                          >
                             <p className="font-medium text-sm">{product.name}</p>
                             <p className="text-xs text-muted-foreground">ID: {product.product_code}</p>
                           </div>
@@ -313,6 +358,15 @@ export default function QuickOrder() {
                         <td className="text-right font-bold text-primary">
                           {amount > 0 ? `₹${amount.toLocaleString()}` : "-"}
                         </td>
+                        <td>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openProductDetail(product)}
+                          >
+                          </Button>
+                        </td>
                       </tr>
                     );
                   })
@@ -346,19 +400,43 @@ export default function QuickOrder() {
                 >
                   <CardContent className="p-4">
                     <div className="flex gap-3">
-                      {/* Product Icon/Image */}
-                      <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center text-2xl shrink-0">
-                        {getProductEmoji(product.category?.name)}
+                      {/* Product Image */}
+                      <div 
+                        className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden cursor-pointer"
+                        onClick={() => openProductDetail(product)}
+                      >
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xl">{getProductEmoji(product.category?.name)}</span>
+                        )}
                       </div>
                       
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="min-w-0">
+                          <div 
+                            className="min-w-0 cursor-pointer"
+                            onClick={() => openProductDetail(product)}
+                          >
                             <p className="font-semibold text-sm truncate">{product.name}</p>
                             <p className="text-xs text-muted-foreground">{product.product_code}</p>
                           </div>
-                          <Badge variant="outline" className="text-xs shrink-0">{product.brand?.name || "N/A"}</Badge>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge variant="outline" className="text-xs">{product.brand?.name || "N/A"}</Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openProductDetail(product)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         
                         {/* Pricing */}
@@ -441,6 +519,15 @@ export default function QuickOrder() {
 
       <Footer />
       <FloatingButtons />
+      
+      {/* Product Detail Dialog */}
+      <ProductDetailDialog
+        product={selectedProduct}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        showWholesalePrice={showWholesalePrice}
+        onAddToCart={addSingleToCart}
+      />
     </div>
   );
 }

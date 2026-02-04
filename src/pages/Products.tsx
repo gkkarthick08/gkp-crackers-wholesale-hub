@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, ShoppingCart, Plus, Minus, Grid3X3, Star, Clock } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus, Grid3X3, Star, Clock, Eye } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
+import ProductDetailDialog from "@/components/ProductDetailDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +22,7 @@ interface Product {
   name: string;
   description: string | null;
   image_url: string | null;
+  video_url: string | null;
   mrp: number;
   retail_price: number;
   wholesale_price: number;
@@ -41,6 +43,8 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { toast } = useToast();
   const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
   const { addItem, totalItems } = useCart();
@@ -116,8 +120,8 @@ export default function Products() {
     return product.mrp - getPrice(product);
   };
 
-  const addToCart = (product: Product) => {
-    const qty = quantities[product.id] || 1;
+  const addToCart = (product: Product, qty?: number) => {
+    const quantity = qty || quantities[product.id] || 1;
     addItem({
       id: product.id,
       name: product.name,
@@ -125,14 +129,19 @@ export default function Products() {
       price: getPrice(product),
       mrp: product.mrp,
       image_url: product.image_url
-    }, qty);
+    }, quantity);
 
     toast({
       title: "Added to Cart!",
-      description: `${product.name} x${qty} added.`,
+      description: `${product.name} x${quantity} added.`,
     });
 
     setQuantities(prev => ({ ...prev, [product.id]: 0 }));
+  };
+
+  const openProductDetail = (product: Product) => {
+    setSelectedProduct(product);
+    setDetailDialogOpen(true);
   };
 
   const getProductEmoji = (categoryName: string | undefined) => {
@@ -242,7 +251,8 @@ export default function Products() {
               return (
                 <Card 
                   key={product.id} 
-                  className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50"
+                  className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 cursor-pointer"
+                  onClick={() => openProductDetail(product)}
                 >
                   <CardContent className="p-3 sm:p-4">
                     {/* Product Image/Emoji */}
@@ -263,6 +273,13 @@ export default function Products() {
                           {discount}% OFF
                         </div>
                       )}
+                      
+                      {/* View Details Overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="bg-white/90 rounded-full p-2">
+                          <Eye className="h-5 w-5 text-foreground" />
+                        </div>
+                      </div>
                       
                       {/* Brand Badge */}
                       {product.brand?.name && (
@@ -304,7 +321,7 @@ export default function Products() {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-1 sm:gap-2 pt-2">
+                      <div className="flex items-center gap-1 sm:gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="outline"
                           size="icon"
@@ -357,6 +374,15 @@ export default function Products() {
       </main>
       <Footer />
       <FloatingButtons />
+      
+      {/* Product Detail Dialog */}
+      <ProductDetailDialog
+        product={selectedProduct}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        showWholesalePrice={showWholesalePrice}
+        onAddToCart={addToCart}
+      />
     </div>
   );
 }
