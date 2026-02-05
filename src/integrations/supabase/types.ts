@@ -166,6 +166,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
           created_at: string | null
           customer_address: string
           customer_id: string | null
@@ -183,6 +185,8 @@ export type Database = {
           user_type: Database["public"]["Enums"]["user_type"] | null
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           created_at?: string | null
           customer_address: string
           customer_id?: string | null
@@ -200,6 +204,8 @@ export type Database = {
           user_type?: Database["public"]["Enums"]["user_type"] | null
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           created_at?: string | null
           customer_address?: string
           customer_id?: string | null
