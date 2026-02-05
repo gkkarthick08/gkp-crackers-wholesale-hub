@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, ShoppingCart, Plus, Minus, Grid3X3, Star, Clock, Eye } from "lucide-react";
+import { Search, Filter, ShoppingCart, Grid3X3, Star, Clock, Eye } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
@@ -39,7 +39,6 @@ interface Category {
 export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,14 +98,6 @@ export default function Products() {
     });
   }, [products, searchQuery, selectedCategory]);
 
-  const updateQuantity = (productId: string, delta: number) => {
-    setQuantities(prev => {
-      const current = prev[productId] || 0;
-      const newValue = Math.max(0, current + delta);
-      return { ...prev, [productId]: newValue };
-    });
-  };
-
   const getPrice = (product: Product) => {
     return showWholesalePrice ? product.wholesale_price : product.retail_price;
   };
@@ -120,8 +111,7 @@ export default function Products() {
     return product.mrp - getPrice(product);
   };
 
-  const addToCart = (product: Product, qty?: number) => {
-    const quantity = qty || quantities[product.id] || 1;
+  const addToCart = (product: Product, qty: number = 1) => {
     addItem({
       id: product.id,
       name: product.name,
@@ -129,14 +119,12 @@ export default function Products() {
       price: getPrice(product),
       mrp: product.mrp,
       image_url: product.image_url
-    }, quantity);
+    }, qty);
 
     toast({
       title: "Added to Cart!",
-      description: `${product.name} x${quantity} added.`,
+      description: `${product.name} x${qty} added.`,
     });
-
-    setQuantities(prev => ({ ...prev, [product.id]: 0 }));
   };
 
   const openProductDetail = (product: Product) => {
@@ -244,7 +232,6 @@ export default function Products() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
             {filteredProducts.map((product) => {
-              const qty = quantities[product.id] || 0;
               const discount = getDiscountPercent(product);
               const savings = getSavings(product);
               
@@ -321,32 +308,16 @@ export default function Products() {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-1 sm:gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7 sm:h-8 sm:w-8"
-                          onClick={() => updateQuantity(product.id, -1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-6 sm:w-8 text-center text-sm font-medium">{qty || 1}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7 sm:h-8 sm:w-8"
-                          onClick={() => updateQuantity(product.id, 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
+                      {/* Add to Cart Button */}
+                      <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="hero"
                           size="sm"
-                          className="flex-1 h-7 sm:h-8 text-xs sm:text-sm"
-                          onClick={() => addToCart(product)}
+                          className="w-full h-9 text-xs sm:text-sm font-medium"
+                          onClick={() => addToCart(product, 1)}
                         >
-                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          Add
+                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                          Add to Cart
                         </Button>
                       </div>
                     </div>

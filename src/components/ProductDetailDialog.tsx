@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, ShoppingCart, Plus, Minus, Play, Star, Tag, Package } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ShoppingCart, Plus, Minus, Play, Star, Tag, Package, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,14 @@ export default function ProductDetailDialog({
 }: ProductDetailDialogProps) {
   const [quantity, setQuantity] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
+
+  // Reset state when product changes
+  useEffect(() => {
+    if (product) {
+      setQuantity(1);
+      setShowVideo(false);
+    }
+  }, [product?.id]);
 
   if (!product) return null;
 
@@ -144,11 +152,11 @@ export default function ProductDetailDialog({
         </div>
 
         {/* Content Section */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Header */}
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-4">
-              <h2 className="text-2xl font-bold leading-tight">{product.name}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold leading-tight">{product.name}</h2>
             </div>
             
             <div className="flex flex-wrap items-center gap-2">
@@ -180,18 +188,18 @@ export default function ProductDetailDialog({
 
           {/* Pricing */}
           <div className="space-y-3">
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-primary">₹{price}</span>
-              <span className="text-lg text-muted-foreground line-through">₹{product.mrp}</span>
-              <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-bold text-primary">₹{price.toLocaleString()}</span>
+              <span className="text-base sm:text-lg text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
+              <Badge variant="secondary" className="bg-accent/50 text-accent-foreground border-accent text-xs">
                 {showWholesalePrice ? "Wholesale" : "Retail"}
               </Badge>
             </div>
             
             {savings > 0 && (
-              <div className="flex items-center gap-2 text-green-600">
-                <Star className="h-4 w-4 fill-current" />
-                <span className="font-medium">You save ₹{savings} on this purchase!</span>
+              <div className="flex items-center gap-2 text-primary bg-primary/5 p-2 rounded-lg">
+                <Star className="h-4 w-4 fill-current flex-shrink-0" />
+                <span className="font-medium text-sm sm:text-base">You save ₹{savings.toLocaleString()} on this purchase!</span>
               </div>
             )}
           </div>
@@ -199,8 +207,8 @@ export default function ProductDetailDialog({
           <Separator />
 
           {/* Add to Cart Section */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <div className="flex items-center justify-center gap-3 bg-muted rounded-xl p-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 sticky bottom-0 bg-background pt-4 border-t border-border/50">
+            <div className="flex items-center justify-center gap-3 bg-muted rounded-xl p-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="icon"
@@ -232,10 +240,16 @@ export default function ProductDetailDialog({
           </div>
 
           {/* Stock Info */}
-          {product.stock !== null && product.stock > 0 && (
-            <p className="text-sm text-muted-foreground text-center">
-              {product.stock > 10 ? "✓ In Stock" : `Only ${product.stock} left in stock!`}
-            </p>
+          {product.stock !== null && (
+            <div className="text-center pb-2">
+              {product.stock > 10 ? (
+                <p className="text-sm text-primary font-medium">✓ In Stock</p>
+              ) : product.stock > 0 ? (
+                <p className="text-sm text-amber-600 font-medium">⚠️ Only {product.stock} left in stock!</p>
+              ) : (
+                <p className="text-sm text-destructive font-medium">Out of Stock</p>
+              )}
+            </div>
           )}
         </div>
       </DialogContent>
