@@ -7,8 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ChevronDown, ChevronUp, Loader2, ShoppingBag } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Loader2, ShoppingBag, XCircle } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderItem {
   id: string;
@@ -31,6 +44,8 @@ interface Order {
   customer_address: string;
   notes: string | null;
   items?: OrderItem[];
+  cancellation_reason: string | null;
+  cancelled_at: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -48,6 +63,11 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -107,6 +127,61 @@ export default function Orders() {
         fetchOrderItems(orderId);
       }
     }
+  };
+
+  const handleCancelClick = (order: Order, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOrderToCancel(order);
+    setCancellationReason("");
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!orderToCancel || !cancellationReason.trim()) {
+      toast({
+        title: "Please provide a reason",
+        description: "Cancellation reason is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          status: "cancelled",
+          cancellation_reason: cancellationReason.trim(),
+          cancelled_at: new Date().toISOString(),
+        })
+        .eq("id", orderToCancel.id)
+        .eq("customer_id", user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Order cancelled",
+        description: `Order ${orderToCancel.order_number} has been cancelled`,
+      });
+
+      fetchOrders();
+      setCancelDialogOpen(false);
+      setOrderToCancel(null);
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast({
+        title: "Failed to cancel order",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const canCancelOrder = (status: string) => {
+    return status === "pending" || status === "confirmed";
   };
 
   if (authLoading) {
@@ -176,6 +251,16 @@ export default function Orders() {
                       <Badge className={statusColors[order.status || "pending"]}>
                         {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                       </Badge>
+                      {canCancelOrder(order.status) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => handleCancelClick(order, e)}
+                        >
+                          <XCircle className="h-5 w-5" />
+                        </Button>
+                      )}
                       {expandedOrder === order.id ? (
                         <ChevronUp className="h-5 w-5 text-muted-foreground" />
                       ) : (
@@ -232,10 +317,22 @@ export default function Orders() {
                         )}
                       </div>
 
+                      {order.status === "cancelled" && order.cancellation_reason && (
+                        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                          <p className="text-sm font-medium text-destructive">Cancellation Reason</p>
+                          <p className="text-sm text-destructive/80">{order.cancellation_reason}</p>
+                          {order.cancelled_at && (
+                            <p className="text-xs text-destructive/70 mt-1">
+                              Cancelled on {format(new Date(order.cancelled_at), "dd MMM yyyy, hh:mm a")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex justify-end gap-4 text-sm">
                         <div>Subtotal: ₹{order.total_amount?.toLocaleString()}</div>
                         {order.discount_amount > 0 && (
-                          <div className="text-green-600">
+                          <div className="text-emerald-600 dark:text-emerald-400">
                             Discount: -₹{order.discount_amount?.toLocaleString()}
                           </div>
                         )}
@@ -251,6 +348,50 @@ export default function Orders() {
           </div>
         )}
       </main>
+
+      {/* Cancel Order Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel order{" "}
+              <span className="font-semibold">{orderToCancel?.order_number}</span>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="cancellation-reason" className="text-sm font-medium">
+              Reason for cancellation <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="cancellation-reason"
+              placeholder="Please tell us why you're cancelling this order..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="mt-2"
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Keep Order</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancelOrder}
+              disabled={isCancelling || !cancellationReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Cancelling...
+                </>
+              ) : (
+                "Cancel Order"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Footer />
     </div>
