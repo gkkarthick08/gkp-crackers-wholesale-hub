@@ -268,14 +268,14 @@ export default function Cart() {
             <div className="w-24 h-24 mx-auto rounded-full bg-muted flex items-center justify-center mb-6">
               <ShoppingBag className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h1 className="text-2xl font-bold mb-4">Your Cart is Empty</h1>
+            <h1 className="text-2xl font-bold mb-4">Your Estimate Cart is Empty</h1>
             <p className="text-muted-foreground mb-8">
-              Add products from our quick order page to get started.
+              Add products from our catalog to get your order estimate.
             </p>
-            <Link to="/quick-order">
+            <Link to="/products">
               <Button variant="hero" size="lg" className="gap-2">
                 <ShoppingBag className="h-5 w-5" />
-                Start Shopping
+                Browse Products
               </Button>
             </Link>
           </div>
@@ -291,14 +291,14 @@ export default function Cart() {
       <main className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Link to="/quick-order">
+          <Link to="/products">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Your Cart</h1>
-            <p className="text-muted-foreground">{totalItems} items in your cart</p>
+            <h1 className="text-3xl font-bold">Estimate Cart</h1>
+            <p className="text-muted-foreground">{totalItems} items in your estimate</p>
           </div>
         </div>
 
@@ -521,10 +521,10 @@ export default function Cart() {
               </Card>
             )}
 
-            {/* Order Summary */}
+            {/* Order Estimate Summary */}
             <Card className="shadow-card border-primary/20">
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <CardTitle>Order Estimate Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-muted-foreground">
@@ -580,12 +580,12 @@ export default function Cart() {
                       onClick={placeOrder}
                       disabled={isSubmitting || !isMinOrderMet}
                     >
-                      {isSubmitting ? "Placing Order..." : "Place Order"}
+                      {isSubmitting ? "Submitting Estimate..." : "Submit Order Estimate"}
                     </Button>
                   ) : (
                     <Link to="/auth" className="block">
                       <Button variant="hero" size="lg" className="w-full">
-                        Login to Place Order
+                        Login to Submit Estimate
                       </Button>
                     </Link>
                   )}

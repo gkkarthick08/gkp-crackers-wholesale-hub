@@ -203,7 +203,7 @@ export default function Orders() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-6">
           <Package className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">My Orders</h1>
+          <h1 className="text-2xl font-bold">My Order Estimates</h1>
         </div>
 
         {isLoading ? (
@@ -214,11 +214,11 @@ export default function Orders() {
           <Card className="text-center py-12">
             <CardContent>
               <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
+              <h2 className="text-xl font-semibold mb-2">No order estimates yet</h2>
               <p className="text-muted-foreground mb-4">
-                You haven't placed any orders yet. Start shopping!
+                You haven't submitted any order estimates yet. Start shopping!
               </p>
-              <Button onClick={() => navigate("/quick-order")} variant="hero">
+              <Button onClick={() => navigate("/products")} variant="hero">
                 Browse Products
               </Button>
             </CardContent>
@@ -287,7 +287,7 @@ export default function Orders() {
                       </div>
 
                       <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-muted/50 px-4 py-2 font-medium">Order Items</div>
+                        <div className="bg-muted/50 px-4 py-2 font-medium">Estimate Items</div>
                         {order.items ? (
                           <div className="divide-y">
                             {order.items.map((item) => (
@@ -353,9 +353,9 @@ export default function Orders() {
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+            <AlertDialogTitle>Cancel Order Estimate</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel order{" "}
+              Are you sure you want to cancel order estimate{" "}
               <span className="font-semibold">{orderToCancel?.order_number}</span>?
               This action cannot be undone.
             </AlertDialogDescription>

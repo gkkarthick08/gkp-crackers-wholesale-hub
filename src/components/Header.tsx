@@ -126,7 +126,7 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link to="/orders" className="cursor-pointer">
                     <Package className="h-4 w-4 mr-2" />
-                    My Orders
+                    My Order Estimates
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

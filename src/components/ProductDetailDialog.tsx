@@ -65,6 +65,11 @@ export default function ProductDetailDialog({
       const videoId = new URL(url).searchParams.get('v');
       return `https://www.youtube.com/embed/${videoId}`;
     }
+    // Handle YouTube Shorts URLs
+    if (url.includes('youtube.com/shorts/')) {
+      const videoId = url.split('youtube.com/shorts/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
     if (url.includes('youtu.be/')) {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
       return `https://www.youtube.com/embed/${videoId}`;
@@ -235,7 +240,7 @@ export default function ProductDetailDialog({
               onClick={handleAddToCart}
             >
               <ShoppingCart className="h-5 w-5" />
-              Add to Cart - ₹{(price * quantity).toLocaleString()}
+              Add to Estimate - ₹{(price * quantity).toLocaleString()}
             </Button>
           </div>
 
