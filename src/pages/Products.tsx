@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, ShoppingCart, Grid3X3, Star, Clock, Eye } from "lucide-react";
+import { Search, Filter, ShoppingCart, Grid3X3, Star, Clock, Eye, Plus, Minus } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
@@ -44,6 +44,7 @@ export default function Products() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { toast } = useToast();
   const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
   const { addItem, totalItems } = useCart();
@@ -111,6 +112,19 @@ export default function Products() {
     return product.mrp - getPrice(product);
   };
 
+  const updateQuantity = (productId: string, delta: number) => {
+    setQuantities(prev => {
+      const current = prev[productId] || 0;
+      const newValue = Math.max(0, current + delta);
+      return { ...prev, [productId]: newValue };
+    });
+  };
+
+  const setQuantity = (productId: string, value: string) => {
+    const numValue = parseInt(value) || 0;
+    setQuantities(prev => ({ ...prev, [productId]: Math.max(0, numValue) }));
+  };
+
   const addToCart = (product: Product, qty: number = 1) => {
     addItem({
       id: product.id,
@@ -122,9 +136,16 @@ export default function Products() {
     }, qty);
 
     toast({
-      title: "Added to Cart!",
+      title: "Added to Estimate Cart!",
       description: `${product.name} x${qty} added.`,
     });
+  };
+
+  const addSelectedToCart = (product: Product) => {
+    const qty = quantities[product.id] || 1;
+    addToCart(product, qty);
+    // Reset quantity after adding
+    setQuantities(prev => ({ ...prev, [product.id]: 0 }));
   };
 
   const openProductDetail = (product: Product) => {
@@ -150,7 +171,7 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-24">
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-2 mb-2">
@@ -234,16 +255,19 @@ export default function Products() {
             {filteredProducts.map((product) => {
               const discount = getDiscountPercent(product);
               const savings = getSavings(product);
+              const qty = quantities[product.id] || 0;
               
               return (
                 <Card 
                   key={product.id} 
-                  className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 cursor-pointer"
-                  onClick={() => openProductDetail(product)}
+                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 ${qty > 0 ? "border-primary/50 bg-primary/5" : ""}`}
                 >
                   <CardContent className="p-3 sm:p-4">
                     {/* Product Image/Emoji */}
-                    <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
+                    <div 
+                      className="relative aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl mb-3 flex items-center justify-center overflow-hidden cursor-pointer"
+                      onClick={() => openProductDetail(product)}
+                    >
                       {product.image_url ? (
                         <img 
                           src={product.image_url} 
@@ -278,7 +302,10 @@ export default function Products() {
 
                     {/* Product Info */}
                     <div className="space-y-2">
-                      <h3 className="font-semibold text-sm sm:text-base line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem] sm:min-h-[3rem]">
+                      <h3 
+                        className="font-semibold text-sm sm:text-base line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem] sm:min-h-[3rem] cursor-pointer"
+                        onClick={() => openProductDetail(product)}
+                      >
                         {product.name}
                       </h3>
                       
@@ -290,10 +317,10 @@ export default function Products() {
                       <div className="space-y-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-lg sm:text-xl font-bold text-primary">
-                            ₹{getPrice(product)}
+                            ₹{getPrice(product).toLocaleString()}
                           </span>
                           <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                            ₹{product.mrp}
+                            ₹{product.mrp.toLocaleString()}
                           </span>
                         </div>
                         
@@ -301,23 +328,68 @@ export default function Products() {
                           <div className="flex items-center gap-1 text-green-600">
                             <Star className="h-3 w-3 fill-current" />
                             <span className="text-[10px] sm:text-xs font-medium">
-                              You save ₹{savings}
+                              You save ₹{savings.toLocaleString()}
                             </span>
                           </div>
                         )}
                       </div>
 
-                      {/* Quantity Controls */}
-                      {/* Add to Cart Button */}
-                      <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                      {/* Quantity Controls - Like QuickOrder */}
+                      <div className="flex items-center justify-between gap-2 pt-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(product.id, -1);
+                            }}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={qty || ""}
+                            placeholder="0"
+                            onChange={(e) => setQuantity(product.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-12 h-8 text-center text-sm px-1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(product.id, 1);
+                            }}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        
+                        {qty > 0 && (
+                          <span className="text-sm font-bold text-primary">
+                            ₹{(getPrice(product) * qty).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Add to Estimate Cart Button */}
+                      <div className="pt-1">
                         <Button
                           variant="hero"
                           size="sm"
                           className="w-full h-9 text-xs sm:text-sm font-medium"
-                          onClick={() => addToCart(product, 1)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addSelectedToCart(product);
+                          }}
                         >
                           <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
-                          Add to Cart
+                          {qty > 0 ? `Add ${qty} to Estimate` : "Add to Estimate"}
                         </Button>
                       </div>
                     </div>
@@ -338,7 +410,7 @@ export default function Products() {
               onClick={() => navigate("/cart")}
             >
               <ShoppingCart className="h-5 w-5" />
-              View Cart ({totalItems} items)
+              View Estimate Cart ({totalItems} items)
             </Button>
           </div>
         )}

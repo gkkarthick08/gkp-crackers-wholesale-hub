@@ -146,7 +146,7 @@ export default function QuickOrder() {
     });
 
     toast({
-      title: "Added to Cart!",
+      title: "Added to Estimate Cart!",
       description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} added.`,
     });
     
@@ -166,7 +166,7 @@ export default function QuickOrder() {
     }, quantity);
 
     toast({
-      title: "Added to Cart!",
+      title: "Added to Estimate Cart!",
       description: `${product.name} x${quantity} added.`,
     });
   };
@@ -512,7 +512,7 @@ export default function QuickOrder() {
             disabled={totalItems === 0}
           >
             <ShoppingCart className="h-5 w-5" />
-            Add to Cart
+            Add to Estimate Cart
           </Button>
         </div>
       </div>
