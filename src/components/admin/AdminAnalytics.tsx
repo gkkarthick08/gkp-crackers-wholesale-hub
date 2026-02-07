@@ -110,13 +110,13 @@ export default function AdminAnalytics() {
           period !== "all" 
             ? supabase
                 .from("orders")
-                .select("id, final_amount")
+                .select("id, final_amount, status")
                 .gte("created_at", prevStartDate.toISOString())
                 .lte("created_at", prevEndDate.toISOString())
             : Promise.resolve({ data: [] }),
           supabase
             .from("order_items")
-            .select("product_id, product_name, product_code, quantity, total_price"),
+            .select("product_id, product_name, product_code, quantity, total_price, order_id"),
         ]);
 
         const orders = ordersRes.data || [];
@@ -126,12 +126,19 @@ export default function AdminAnalytics() {
         const prevOrders = prevOrdersRes.data || [];
         const orderItems = orderItemsRes.data || [];
 
-        // Calculate metrics
-        const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-        const prevRevenue = prevOrders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
+        // Filter out cancelled orders for revenue calculations
+        const activeOrders = orders.filter(o => o.status !== "cancelled");
+        const prevActiveOrders = prevOrders.filter((o: any) => o.status !== "cancelled");
+
+        // Get order IDs that are NOT cancelled (for order items filtering)
+        const activeOrderIds = new Set(activeOrders.map(o => o.id));
+
+        // Calculate metrics - exclude cancelled orders from revenue
+        const totalRevenue = activeOrders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
+        const prevRevenue = prevActiveOrders.reduce((sum: number, o: any) => sum + (Number(o.final_amount) || 0), 0);
         const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
-        const orderGrowth = prevOrders.length > 0 ? ((orders.length - prevOrders.length) / prevOrders.length) * 100 : 0;
-        const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+        const orderGrowth = prevActiveOrders.length > 0 ? ((activeOrders.length - prevActiveOrders.length) / prevActiveOrders.length) * 100 : 0;
+        const avgOrderValue = activeOrders.length > 0 ? totalRevenue / activeOrders.length : 0;
 
         // Orders by status
         const statusCounts: Record<string, number> = {};
@@ -153,12 +160,12 @@ export default function AdminAnalytics() {
           count,
         }));
 
-        // Revenue by day (last 7 days)
+        // Revenue by day (last 7 days) - exclude cancelled orders
         const revenueByDay: { date: string; revenue: number; orders: number }[] = [];
         for (let i = 6; i >= 0; i--) {
           const day = subDays(now, i);
           const dayStr = format(day, "yyyy-MM-dd");
-          const dayOrders = orders.filter(
+          const dayOrders = activeOrders.filter(
             (o) => format(new Date(o.created_at), "yyyy-MM-dd") === dayStr
           );
           revenueByDay.push({
@@ -183,10 +190,11 @@ export default function AdminAnalytics() {
           .sort((a, b) => b.count - a.count)
           .slice(0, 5);
 
-        // Top selling products
+        // Top selling products - only from active (non-cancelled) orders
         const productSales: Record<string, { name: string; product_code: string; totalQuantity: number; totalRevenue: number }> = {};
         orderItems.forEach((item) => {
-          if (item.product_id) {
+          // Only count items from non-cancelled orders
+          if (item.product_id && item.order_id && activeOrderIds.has(item.order_id)) {
             if (!productSales[item.product_id]) {
               productSales[item.product_id] = {
                 name: item.product_name,
