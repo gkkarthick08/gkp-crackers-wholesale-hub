@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, CartItem } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
@@ -44,11 +44,16 @@ export default function Products() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { toast } = useToast();
   const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
-  const { addItem, totalItems } = useCart();
+  const { items: cartItems, addItem, updateQuantity: updateCartQuantity, removeItem, totalItems } = useCart();
   const navigate = useNavigate();
+
+  // Get cart quantity for a product
+  const getCartQty = (productId: string): number => {
+    const cartItem = cartItems.find((item: CartItem) => item.id === productId);
+    return cartItem?.quantity || 0;
+  };
 
   // Only verified dealers see wholesale prices
   const showWholesalePrice = isVerifiedDealer;
@@ -112,17 +117,28 @@ export default function Products() {
     return product.mrp - getPrice(product);
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
-    setQuantities(prev => {
-      const current = prev[productId] || 0;
-      const newValue = Math.max(0, current + delta);
-      return { ...prev, [productId]: newValue };
+  const handleAddToEstimate = (product: Product) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      product_code: product.product_code,
+      price: getPrice(product),
+      mrp: product.mrp,
+      image_url: product.image_url
+    }, 1);
+
+    toast({
+      title: "Added to Estimate Cart!",
+      description: `${product.name} added.`,
     });
   };
 
-  const setQuantity = (productId: string, value: string) => {
-    const numValue = parseInt(value) || 0;
-    setQuantities(prev => ({ ...prev, [productId]: Math.max(0, numValue) }));
+  const handleUpdateQty = (product: Product, newQty: number) => {
+    if (newQty <= 0) {
+      removeItem(product.id);
+    } else {
+      updateCartQuantity(product.id, newQty);
+    }
   };
 
   const addToCart = (product: Product, qty: number = 1) => {
@@ -139,13 +155,6 @@ export default function Products() {
       title: "Added to Estimate Cart!",
       description: `${product.name} x${qty} added.`,
     });
-  };
-
-  const addSelectedToCart = (product: Product) => {
-    const qty = quantities[product.id] || 1;
-    addToCart(product, qty);
-    // Reset quantity after adding
-    setQuantities(prev => ({ ...prev, [product.id]: 0 }));
   };
 
   const openProductDetail = (product: Product) => {
@@ -255,12 +264,13 @@ export default function Products() {
             {filteredProducts.map((product) => {
               const discount = getDiscountPercent(product);
               const savings = getSavings(product);
-              const qty = quantities[product.id] || 0;
+              const cartQty = getCartQty(product.id);
+              const isInCart = cartQty > 0;
               
               return (
                 <Card 
                   key={product.id} 
-                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 ${qty > 0 ? "border-primary/50 bg-primary/5" : ""}`}
+                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 ${isInCart ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
                 >
                   <CardContent className="p-3 sm:p-4">
                     {/* Product Image/Emoji */}
@@ -285,9 +295,17 @@ export default function Products() {
                         </div>
                       )}
                       
+                      {/* In Cart Badge */}
+                      {isInCart && (
+                        <div className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                          <ShoppingCart className="h-3 w-3" />
+                          {cartQty} in cart
+                        </div>
+                      )}
+                      
                       {/* View Details Overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="bg-white/90 rounded-full p-2">
+                      <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="bg-background/90 rounded-full p-2">
                           <Eye className="h-5 w-5 text-foreground" />
                         </div>
                       </div>
@@ -325,7 +343,7 @@ export default function Products() {
                         </div>
                         
                         {savings > 0 && (
-                          <div className="flex items-center gap-1 text-green-600">
+                          <div className="flex items-center gap-1 text-accent">
                             <Star className="h-3 w-3 fill-current" />
                             <span className="text-[10px] sm:text-xs font-medium">
                               You save ₹{savings.toLocaleString()}
@@ -334,63 +352,71 @@ export default function Products() {
                         )}
                       </div>
 
-                      {/* Quantity Controls - Like QuickOrder */}
-                      <div className="flex items-center justify-between gap-2 pt-2">
-                        <div className="flex items-center gap-1">
+                      {/* Action Section - Conditional based on cart state */}
+                      <div className="pt-2">
+                        {isInCart ? (
+                          // Show quantity controls when item is in cart
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateQty(product, cartQty - 1);
+                                  }}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={cartQty}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value) || 0;
+                                    handleUpdateQty(product, val);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-12 h-8 text-center text-sm px-1"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateQty(product, cartQty + 1);
+                                  }}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <span className="text-sm font-bold text-primary">
+                                ₹{(getPrice(product) * cartQty).toLocaleString()}
+                              </span>
+                            </div>
+                            <Badge variant="secondary" className="w-full justify-center bg-primary/10 text-primary border-primary/20 text-xs py-1">
+                              <ShoppingCart className="h-3 w-3 mr-1" />
+                              Added to Estimate
+                            </Badge>
+                          </div>
+                        ) : (
+                          // Show Add to Estimate button when not in cart
                           <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
+                            variant="hero"
+                            size="sm"
+                            className="w-full h-9 text-xs sm:text-sm font-medium"
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateQuantity(product.id, -1);
+                              handleAddToEstimate(product);
                             }}
                           >
-                            <Minus className="h-3 w-3" />
+                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                            Add to Estimate
                           </Button>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={qty || ""}
-                            placeholder="0"
-                            onChange={(e) => setQuantity(product.id, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-12 h-8 text-center text-sm px-1"
-                          />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQuantity(product.id, 1);
-                            }}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        
-                        {qty > 0 && (
-                          <span className="text-sm font-bold text-primary">
-                            ₹{(getPrice(product) * qty).toLocaleString()}
-                          </span>
                         )}
-                      </div>
-
-                      {/* Add to Estimate Cart Button */}
-                      <div className="pt-1">
-                        <Button
-                          variant="hero"
-                          size="sm"
-                          className="w-full h-9 text-xs sm:text-sm font-medium"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addSelectedToCart(product);
-                          }}
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
-                          {qty > 0 ? `Add ${qty} to Estimate` : "Add to Estimate"}
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
