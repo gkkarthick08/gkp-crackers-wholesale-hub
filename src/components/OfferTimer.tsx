@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Clock, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TimeLeft {
   days: number;
@@ -8,17 +9,55 @@ interface TimeLeft {
   seconds: number;
 }
 
+interface CountdownSettings {
+  countdownEnabled: boolean;
+  countdownTitle: string;
+  countdownTargetDate: string;
+}
+
 export default function OfferTimer() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [settings, setSettings] = useState<CountdownSettings>({
+    countdownEnabled: true,
+    countdownTitle: "🎆 DIWALI SALE - Special Prices Ending Soon!",
+    countdownTargetDate: new Date(new Date().getFullYear(), 10, 1).toISOString().split('T')[0],
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch countdown settings from database
   useEffect(() => {
-    // Set target date to next Diwali (approximate)
-    const targetDate = new Date();
-    targetDate.setMonth(10); // November
-    targetDate.setDate(1);
-    if (targetDate < new Date()) {
-      targetDate.setFullYear(targetDate.getFullYear() + 1);
-    }
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .in("key", ["countdownEnabled", "countdownTitle", "countdownTargetDate"]);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const loadedSettings: Partial<CountdownSettings> = {};
+          data.forEach((item) => {
+            (loadedSettings as any)[item.key] = item.value;
+          });
+          setSettings((prev) => ({ ...prev, ...loadedSettings }));
+        }
+      } catch (error) {
+        console.error("Error fetching countdown settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Countdown timer logic
+  useEffect(() => {
+    if (!settings.countdownEnabled) return;
+
+    const targetDate = new Date(settings.countdownTargetDate);
+    targetDate.setHours(23, 59, 59, 999); // End of the target day
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
@@ -31,11 +70,18 @@ export default function OfferTimer() {
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000)
         });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [settings.countdownEnabled, settings.countdownTargetDate]);
+
+  // Don't render if disabled or loading
+  if (isLoading || !settings.countdownEnabled) {
+    return null;
+  }
 
   return (
     <section className="py-8 gradient-hero">
@@ -43,7 +89,7 @@ export default function OfferTimer() {
         <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
           <div className="flex items-center gap-3 text-white">
             <Sparkles className="h-6 w-6 animate-sparkle" />
-            <span className="text-lg font-bold">🎆 DIWALI SALE - Special Prices Ending Soon!</span>
+            <span className="text-lg font-bold">{settings.countdownTitle}</span>
             <Sparkles className="h-6 w-6 animate-sparkle" />
           </div>
           
