@@ -12,7 +12,9 @@ import {
   Mail,
   Clock,
   Globe,
-  Percent
+  Percent,
+  Sparkles,
+  Calendar
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +46,10 @@ interface SiteSettings {
   enableReferrals: boolean;
   enableWallet: boolean;
   maintenanceMode: boolean;
+  // Countdown settings
+  countdownEnabled: boolean;
+  countdownTitle: string;
+  countdownTargetDate: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -66,6 +72,10 @@ const defaultSettings: SiteSettings = {
   enableReferrals: true,
   enableWallet: true,
   maintenanceMode: false,
+  // Countdown defaults
+  countdownEnabled: true,
+  countdownTitle: "🎆 DIWALI SALE - Special Prices Ending Soon!",
+  countdownTargetDate: new Date(new Date().getFullYear(), 10, 1).toISOString().split('T')[0], // Nov 1
 };
 
 export default function AdminSettings() {
@@ -164,7 +174,7 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="store" className="space-y-6">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full">
           <TabsTrigger value="store" className="gap-2">
             <Store className="h-4 w-4" />
             <span className="hidden sm:inline">Store</span>
@@ -172,6 +182,10 @@ export default function AdminSettings() {
           <TabsTrigger value="pricing" className="gap-2">
             <Percent className="h-4 w-4" />
             <span className="hidden sm:inline">Pricing</span>
+          </TabsTrigger>
+          <TabsTrigger value="countdown" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Countdown</span>
           </TabsTrigger>
           <TabsTrigger value="features" className="gap-2">
             <Settings className="h-4 w-4" />
@@ -395,6 +409,82 @@ export default function AdminSettings() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Countdown Settings */}
+        <TabsContent value="countdown">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Countdown Timer Settings
+              </CardTitle>
+              <CardDescription>Configure the promotional countdown timer shown on the homepage</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="space-y-0.5">
+                  <Label className="text-base font-medium">Enable Countdown</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show the countdown timer on the homepage
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.countdownEnabled}
+                  onCheckedChange={(checked) => updateSetting("countdownEnabled", checked)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="countdownTitle" className="flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Countdown Title / Message
+                </Label>
+                <Input
+                  id="countdownTitle"
+                  value={settings.countdownTitle}
+                  onChange={(e) => updateSetting("countdownTitle", e.target.value)}
+                  placeholder="🎆 DIWALI SALE - Special Prices Ending Soon!"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use emojis for extra festive appeal! Example: 🎆 🎇 🪔 ✨
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="countdownTargetDate" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Target Date
+                </Label>
+                <Input
+                  id="countdownTargetDate"
+                  type="date"
+                  value={settings.countdownTargetDate}
+                  onChange={(e) => updateSetting("countdownTargetDate", e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The countdown will count down to this date
+                </p>
+              </div>
+
+              {settings.countdownEnabled && (
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="font-medium mb-2">Preview</h4>
+                  <div className="gradient-hero rounded-lg p-4 text-center">
+                    <p className="text-white font-bold">{settings.countdownTitle}</p>
+                    <p className="text-white/70 text-sm mt-1">
+                      Counting down to: {new Date(settings.countdownTargetDate).toLocaleDateString('en-IN', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Features Settings */}

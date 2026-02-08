@@ -11,11 +11,13 @@ interface DashboardStats {
   totalProducts: number;
   totalCustomers: number;
   totalOrders: number;
+  activeOrders: number;
   pendingOrders: number;
   totalRevenue: number;
   totalReferrals: number;
   totalWalletBalance: number;
   pendingReferrals: number;
+  cancelledOrders: number;
 }
 
 interface RecentOrder {
@@ -32,11 +34,13 @@ export default function AdminDashboard() {
     totalProducts: 0,
     totalCustomers: 0,
     totalOrders: 0,
+    activeOrders: 0,
     pendingOrders: 0,
     totalRevenue: 0,
     totalReferrals: 0,
     totalWalletBalance: 0,
     pendingReferrals: 0,
+    cancelledOrders: 0,
   });
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +56,10 @@ export default function AdminDashboard() {
         ]);
 
         const pendingOrders = orders.data?.filter(o => o.status === "pending").length || 0;
-        const totalRevenue = orders.data?.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0) || 0;
+        const cancelledOrders = orders.data?.filter(o => o.status === "cancelled").length || 0;
+        const activeOrders = orders.data?.filter(o => o.status !== "cancelled").length || 0;
+        // Calculate revenue only from non-cancelled orders
+        const totalRevenue = orders.data?.filter(o => o.status !== "cancelled").reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0) || 0;
         const totalWalletBalance = profiles.data?.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0) || 0;
         const pendingReferrals = referrals.data?.filter(r => !r.is_claimed).length || 0;
 
@@ -60,11 +67,13 @@ export default function AdminDashboard() {
           totalProducts: products.count || 0,
           totalCustomers: profiles.data?.length || 0,
           totalOrders: orders.data?.length || 0,
+          activeOrders,
           pendingOrders,
           totalRevenue,
           totalReferrals: referrals.data?.length || 0,
           totalWalletBalance,
           pendingReferrals,
+          cancelledOrders,
         });
 
         setRecentOrders(orders.data || []);
@@ -94,11 +103,12 @@ export default function AdminDashboard() {
       link: "/admin/customers",
     },
     {
-      title: "Total Orders",
-      value: stats.totalOrders,
+      title: "Active Orders",
+      value: stats.activeOrders,
       icon: ShoppingCart,
-      color: "bg-accent/10 text-accent-foreground",
+      color: "bg-green-500/10 text-green-600",
       link: "/admin/orders",
+      subtext: `${stats.cancelledOrders} cancelled`,
     },
     {
       title: "Pending Orders",
@@ -114,6 +124,7 @@ export default function AdminDashboard() {
       icon: Wallet,
       color: "bg-green-500/10 text-green-600",
       link: "/admin/orders",
+      subtext: "Excl. cancelled",
     },
     {
       title: "Referrals",
@@ -176,14 +187,19 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-xl sm:text-3xl font-bold truncate">
-                    {isLoading ? "..." : stat.value}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xl sm:text-3xl font-bold truncate">
+                      {isLoading ? "..." : stat.value}
+                    </div>
+                    {stat.badge && (
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap">
+                        {stat.badge}
+                      </Badge>
+                    )}
                   </div>
-                  {stat.badge && (
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap">
-                      {stat.badge}
-                    </Badge>
+                  {stat.subtext && (
+                    <p className="text-xs text-muted-foreground">{stat.subtext}</p>
                   )}
                 </div>
               </CardContent>

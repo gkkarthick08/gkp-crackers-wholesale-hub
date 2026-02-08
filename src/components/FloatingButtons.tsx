@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingBag, MessageCircle } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 export default function FloatingButtons() {
   const openWhatsApp = () => {
@@ -8,7 +8,7 @@ export default function FloatingButtons() {
 
   return (
     <>
-      {/* WhatsApp Button */}
+      {/* WhatsApp Button - positioned above Quick Order */}
       <button
         onClick={openWhatsApp}
         className="floating-btn bottom-24 right-4 bg-[hsl(142,70%,49%)] text-white animate-pulse-glow"
@@ -19,13 +19,13 @@ export default function FloatingButtons() {
         </svg>
       </button>
 
-      {/* Quick Order Button */}
+      {/* Quick Order Button - positioned at bottom */}
       <Link
         to="/quick-order"
         className="floating-btn bottom-4 right-4 gradient-hero text-white shadow-festive"
         aria-label="Quick Order"
       >
-        <ShoppingBag className="h-6 w-6" />
+        <ShoppingCart className="h-6 w-6" />
       </Link>
     </>
   );
