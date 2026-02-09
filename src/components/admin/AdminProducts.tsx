@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import BulkProductOperations from "./BulkProductOperations";
 
 interface Product {
   id: string;
@@ -365,6 +366,14 @@ export default function AdminProducts() {
           Add Product
         </Button>
       </div>
+
+      {/* Bulk Operations */}
+      <BulkProductOperations
+        products={products}
+        categories={categories}
+        brands={brands}
+        onRefresh={fetchData}
+      />
 
       {/* Search */}
       <Card className="shadow-card mb-6">
