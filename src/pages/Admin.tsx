@@ -32,10 +32,12 @@ import AdminWallet from "@/components/admin/AdminWallet";
 import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminSettings from "@/components/admin/AdminSettings";
+import AdminWholesaleProducts from "@/components/admin/AdminWholesaleProducts";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Products", href: "/admin/products", icon: Package },
+  { name: "Retail Products", href: "/admin/products", icon: Package },
+  { name: "Wholesale Products", href: "/admin/wholesale-products", icon: Package },
   { name: "Categories", href: "/admin/categories", icon: FolderTree },
   { name: "Brands", href: "/admin/brands", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
@@ -163,6 +165,7 @@ export default function Admin() {
             <Routes>
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
+              <Route path="wholesale-products" element={<AdminWholesaleProducts />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="brands" element={<AdminBrands />} />
               <Route path="orders" element={<AdminOrders />} />

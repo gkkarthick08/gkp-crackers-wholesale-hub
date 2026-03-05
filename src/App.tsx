@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import QuickOrder from "./pages/QuickOrder";
 import Products from "./pages/Products";
+import WholesaleCatalog from "./pages/WholesaleCatalog";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -82,6 +83,7 @@ const App = () => (
               />
 
               <Route path="/products" element={<Products />} />
+              <Route path="/wholesale" element={<WholesaleCatalog />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
