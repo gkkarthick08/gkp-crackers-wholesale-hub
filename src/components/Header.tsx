@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,15 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import logo from "@/assets/logo.png";
-
-const navigation = [
-  { name: "Home", href: "/" },
-  { name: "Quick Order", href: "/quick-order" },
-  { name: "Products", href: "/products" },
-  { name: "Wholesale", href: "/wholesale" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
-];
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
