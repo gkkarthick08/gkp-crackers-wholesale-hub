@@ -521,7 +521,7 @@ export default function QuickOrder() {
             disabled={totalItems === 0}
           >
             <ShoppingCart className="h-5 w-5" />
-            Add to Estimate Cart
+            View Estimate Cart ({totalItems})
           </Button>
         </div>
       </div>
