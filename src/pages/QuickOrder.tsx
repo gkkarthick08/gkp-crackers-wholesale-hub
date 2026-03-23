@@ -103,16 +103,36 @@ export default function QuickOrder() {
   }, [products, searchQuery, selectedCategory]);
 
   const updateQuantity = (productId: string, delta: number) => {
-    setQuantities(prev => {
-      const current = prev[productId] || 0;
-      const newValue = Math.max(0, current + delta);
-      return { ...prev, [productId]: newValue };
-    });
+    const current = quantities[productId] || 0;
+    const newValue = Math.max(0, current + delta);
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    if (newValue === 0) {
+      removeItem(productId);
+    } else if (current === 0) {
+      addItem({
+        id: product.id, name: product.name, product_code: product.product_code,
+        price: getPrice(product), mrp: product.mrp, image_url: product.image_url
+      }, newValue);
+    } else {
+      updateCartQty(productId, newValue);
+    }
   };
 
   const setQuantity = (productId: string, value: string) => {
     const numValue = parseInt(value) || 0;
-    setQuantities(prev => ({ ...prev, [productId]: Math.max(0, numValue) }));
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    if (numValue <= 0) {
+      removeItem(productId);
+    } else if ((quantities[productId] || 0) === 0) {
+      addItem({
+        id: product.id, name: product.name, product_code: product.product_code,
+        price: getPrice(product), mrp: product.mrp, image_url: product.image_url
+      }, numValue);
+    } else {
+      updateCartQty(productId, numValue);
+    }
   };
 
   const getPrice = (product: Product) => {
