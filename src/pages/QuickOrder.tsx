@@ -39,7 +39,6 @@ interface Category {
 export default function QuickOrder() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,8 +46,12 @@ export default function QuickOrder() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { toast } = useToast();
   const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
-  const { addItem } = useCart();
+  const { items: cartItems, addItem, updateQuantity: updateCartQty, removeItem } = useCart();
   const navigate = useNavigate();
+
+  // Build quantities from cart context for display sync
+  const quantities: Record<string, number> = {};
+  cartItems.forEach(item => { quantities[item.id] = item.quantity; });
 
   // Only verified dealers see wholesale prices
   const showWholesalePrice = isVerifiedDealer;
