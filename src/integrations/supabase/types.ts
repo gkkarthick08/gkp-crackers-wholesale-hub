@@ -506,6 +506,84 @@ export type Database = {
           },
         ]
       }
+      wholesale_products: {
+        Row: {
+          brand_id: string | null
+          case_price: number
+          case_qty: number
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_visible: boolean | null
+          mrp: number
+          name: string
+          product_code: string
+          purchase_price: number
+          sale_price: number
+          stock: number | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          brand_id?: string | null
+          case_price?: number
+          case_qty?: number
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean | null
+          mrp?: number
+          name: string
+          product_code: string
+          purchase_price?: number
+          sale_price?: number
+          stock?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          brand_id?: string | null
+          case_price?: number
+          case_qty?: number
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean | null
+          mrp?: number
+          name?: string
+          product_code?: string
+          purchase_price?: number
+          sale_price?: number
+          stock?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wholesale_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
