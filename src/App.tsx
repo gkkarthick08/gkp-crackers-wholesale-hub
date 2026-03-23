@@ -44,17 +44,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-
-              {/* QUICK ORDER – PROTECTED */}
-              <Route
-                path="/quick-order"
-                element={
-                  <DealerGuard>
-                    <QuickOrder />
-                  </DealerGuard>
-                }
-              />
-
+              <Route path="/quick-order" element={<QuickOrder />} />
               <Route path="/products" element={<Products />} />
               <Route path="/wholesale" element={<WholesaleCatalog />} />
               <Route path="/auth" element={<Auth />} />

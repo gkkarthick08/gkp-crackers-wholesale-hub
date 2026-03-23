@@ -17,8 +17,23 @@ import logo from "@/assets/logo.png";
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isVerifiedDealer, signOut } = useAuth();
   const { totalItems } = useCart();
+
+  const navigation = useMemo(() => {
+    const items = [
+      { name: "Home", href: "/" },
+      { name: "Quick Order", href: "/quick-order" },
+      { name: "Products", href: "/products" },
+    ];
+    // Only show Wholesale link to verified dealers
+    if (isVerifiedDealer) {
+      items.push({ name: "Wholesale", href: "/wholesale" });
+    }
+    items.push({ name: "About", href: "/about" });
+    items.push({ name: "Contact", href: "/contact" });
+    return items;
+  }, [isVerifiedDealer]);
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md shadow-card">

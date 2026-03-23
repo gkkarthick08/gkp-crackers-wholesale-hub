@@ -119,7 +119,7 @@ export default function Auth() {
           title: "Login Successful!",
           description: "Welcome back to GKP Crackers",
         });
-        navigate("/quick-order");
+        navigate("/products");
       } else {
         const metadata = {
           full_name: formData.name,
