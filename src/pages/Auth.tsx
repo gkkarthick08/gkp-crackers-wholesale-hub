@@ -60,7 +60,7 @@ export default function Auth() {
 
   // Redirect if already logged in
   if (user) {
-    navigate("/quick-order");
+    navigate("/products");
     return null;
   }
 
