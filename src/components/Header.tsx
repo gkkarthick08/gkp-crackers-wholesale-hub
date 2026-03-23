@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,20 +14,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import logo from "@/assets/logo.png";
 
-const navigation = [
-  { name: "Home", href: "/" },
-  { name: "Quick Order", href: "/quick-order" },
-  { name: "Products", href: "/products" },
-  { name: "Wholesale", href: "/wholesale" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
-];
-
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isVerifiedDealer, signOut } = useAuth();
   const { totalItems } = useCart();
+
+  const navigation = useMemo(() => {
+    const items = [
+      { name: "Home", href: "/" },
+      { name: "Quick Order", href: "/quick-order" },
+      { name: "Products", href: "/products" },
+    ];
+    // Only show Wholesale link to verified dealers
+    if (isVerifiedDealer) {
+      items.push({ name: "Wholesale", href: "/wholesale" });
+    }
+    items.push({ name: "About", href: "/about" });
+    items.push({ name: "Contact", href: "/contact" });
+    return items;
+  }, [isVerifiedDealer]);
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md shadow-card">

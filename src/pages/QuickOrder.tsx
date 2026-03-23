@@ -39,7 +39,6 @@ interface Category {
 export default function QuickOrder() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,8 +46,12 @@ export default function QuickOrder() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { toast } = useToast();
   const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
-  const { addItem } = useCart();
+  const { items: cartItems, addItem, updateQuantity: updateCartQty, removeItem } = useCart();
   const navigate = useNavigate();
+
+  // Build quantities from cart context for display sync
+  const quantities: Record<string, number> = {};
+  cartItems.forEach(item => { quantities[item.id] = item.quantity; });
 
   // Only verified dealers see wholesale prices
   const showWholesalePrice = isVerifiedDealer;
@@ -100,16 +103,36 @@ export default function QuickOrder() {
   }, [products, searchQuery, selectedCategory]);
 
   const updateQuantity = (productId: string, delta: number) => {
-    setQuantities(prev => {
-      const current = prev[productId] || 0;
-      const newValue = Math.max(0, current + delta);
-      return { ...prev, [productId]: newValue };
-    });
+    const current = quantities[productId] || 0;
+    const newValue = Math.max(0, current + delta);
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    if (newValue === 0) {
+      removeItem(productId);
+    } else if (current === 0) {
+      addItem({
+        id: product.id, name: product.name, product_code: product.product_code,
+        price: getPrice(product), mrp: product.mrp, image_url: product.image_url
+      }, newValue);
+    } else {
+      updateCartQty(productId, newValue);
+    }
   };
 
   const setQuantity = (productId: string, value: string) => {
     const numValue = parseInt(value) || 0;
-    setQuantities(prev => ({ ...prev, [productId]: Math.max(0, numValue) }));
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    if (numValue <= 0) {
+      removeItem(productId);
+    } else if ((quantities[productId] || 0) === 0) {
+      addItem({
+        id: product.id, name: product.name, product_code: product.product_code,
+        price: getPrice(product), mrp: product.mrp, image_url: product.image_url
+      }, numValue);
+    } else {
+      updateCartQty(productId, numValue);
+    }
   };
 
   const getPrice = (product: Product) => {
@@ -123,8 +146,7 @@ export default function QuickOrder() {
   }, 0);
 
   const addToEstimate = () => {
-    const itemsToAdd = products.filter(p => quantities[p.id] > 0);
-    if (itemsToAdd.length === 0) {
+    if (totalItems === 0) {
       toast({
         title: "No items selected",
         description: "Please add quantities to products you want to order.",
@@ -132,25 +154,12 @@ export default function QuickOrder() {
       });
       return;
     }
-    
-    itemsToAdd.forEach(product => {
-      const qty = quantities[product.id];
-      addItem({
-        id: product.id,
-        name: product.name,
-        product_code: product.product_code,
-        price: getPrice(product),
-        mrp: product.mrp,
-        image_url: product.image_url
-      }, qty);
-    });
 
     toast({
-      title: "Added to Estimate Cart!",
-      description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} added.`,
+      title: "View Estimate Cart",
+      description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} in cart.`,
     });
     
-    setQuantities({});
     navigate("/cart");
   };
 
@@ -512,7 +521,7 @@ export default function QuickOrder() {
             disabled={totalItems === 0}
           >
             <ShoppingCart className="h-5 w-5" />
-            Add to Estimate Cart
+            View Estimate Cart ({totalItems})
           </Button>
         </div>
       </div>

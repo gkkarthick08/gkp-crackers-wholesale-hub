@@ -60,7 +60,7 @@ export default function Auth() {
 
   // Redirect if already logged in
   if (user) {
-    navigate("/quick-order");
+    navigate("/products");
     return null;
   }
 
@@ -119,7 +119,7 @@ export default function Auth() {
           title: "Login Successful!",
           description: "Welcome back to GKP Crackers",
         });
-        navigate("/quick-order");
+        navigate("/products");
       } else {
         const metadata = {
           full_name: formData.name,
