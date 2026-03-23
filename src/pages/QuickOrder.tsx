@@ -146,8 +146,7 @@ export default function QuickOrder() {
   }, 0);
 
   const addToEstimate = () => {
-    const itemsToAdd = products.filter(p => quantities[p.id] > 0);
-    if (itemsToAdd.length === 0) {
+    if (totalItems === 0) {
       toast({
         title: "No items selected",
         description: "Please add quantities to products you want to order.",
@@ -155,25 +154,12 @@ export default function QuickOrder() {
       });
       return;
     }
-    
-    itemsToAdd.forEach(product => {
-      const qty = quantities[product.id];
-      addItem({
-        id: product.id,
-        name: product.name,
-        product_code: product.product_code,
-        price: getPrice(product),
-        mrp: product.mrp,
-        image_url: product.image_url
-      }, qty);
-    });
 
     toast({
-      title: "Added to Estimate Cart!",
-      description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} added.`,
+      title: "View Estimate Cart",
+      description: `${totalItems} items worth ₹${totalAmount.toLocaleString()} in cart.`,
     });
     
-    setQuantities({});
     navigate("/cart");
   };
 
