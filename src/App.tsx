@@ -25,39 +25,12 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 /* ===============================
-   DEALER ACCESS GUARD
+   AUTH GUARD - requires login
 ================================ */
-const DealerGuard = ({ children }: { children: JSX.Element }) => {
-  const {
-    profile,
-    isVerifiedDealer,
-    isPendingDealer,
-    isLoading,
-  } = useAuth();
-
+const AuthGuard = ({ children }: { children: JSX.Element }) => {
+  const { user, isLoading } = useAuth();
   if (isLoading) return null;
-
-  // Dealer pending verification
-  if (isPendingDealer) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">
-            Your dealer account is pending verification
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Please wait for admin approval.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Dealer but NOT verified → block
-  if (profile?.user_type === "dealer" && !isVerifiedDealer) {
-    return <Navigate to="/" replace />;
-  }
-
+  if (!user) return <Navigate to="/auth" replace />;
   return children;
 };
 
