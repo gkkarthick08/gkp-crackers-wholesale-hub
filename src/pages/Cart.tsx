@@ -343,13 +343,14 @@ export default function Cart() {
               
               return (
                 <Card key={item.id} className="shadow-card">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden relative">
+                  <CardContent className="p-3 sm:p-4">
+                    {/* Mobile: stacked layout */}
+                    <div className="flex gap-3 sm:gap-4">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden relative">
                         {item.image_url ? (
                           <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
-                          <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+                          <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                         )}
                         {discountPercent > 0 && (
                           <div className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold px-1 rounded">
@@ -357,52 +358,58 @@ export default function Cart() {
                           </div>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">Code: {item.product_code}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{item.name}</h3>
+                            <p className="text-xs text-muted-foreground">Code: {item.product_code}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10 h-7 w-7 flex-shrink-0"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-muted-foreground line-through">₹{item.mrp}</span>
-                          <span className="font-bold text-primary">₹{item.price}</span>
+                          <span className="text-xs text-muted-foreground line-through">₹{item.mrp}</span>
+                          <span className="font-bold text-primary text-sm">₹{item.price}</span>
                           {discountPercent > 0 && (
-                            <span className="text-xs text-green-600 font-medium">
+                            <span className="text-[10px] sm:text-xs text-green-600 font-medium">
                               {discountPercent}% OFF
                             </span>
                           )}
                         </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 sm:h-8 sm:w-8"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 sm:w-10 text-center font-semibold text-sm">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 sm:h-8 sm:w-8"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm sm:text-base">₹{(item.price * item.quantity).toLocaleString()}</p>
+                            {itemSaving > 0 && (
+                              <p className="text-[10px] sm:text-xs text-green-600">Save ₹{itemSaving.toLocaleString()}</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-10 text-center font-semibold">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="text-right w-28">
-                        <p className="font-bold">₹{(item.price * item.quantity).toLocaleString()}</p>
-                        {itemSaving > 0 && (
-                          <p className="text-xs text-green-600">Save ₹{itemSaving.toLocaleString()}</p>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
