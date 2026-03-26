@@ -178,9 +178,53 @@ export default function Cart() {
 
     setIsSubmitting(true);
     try {
+      // Refresh prices from DB to prevent stale price rejection
+      const retailIds = items.filter(i => !i.is_wholesale).map(i => i.id);
+      const wholesaleIds = items.filter(i => i.is_wholesale).map(i => i.id);
+
+      let priceMap: Record<string, number> = {};
+
+      if (retailIds.length > 0) {
+        const { data: retailProducts } = await supabase
+          .from("products")
+          .select("id, retail_price, wholesale_price")
+          .in("id", retailIds);
+
+        if (retailProducts) {
+          const isDealer = profile?.user_type === "dealer" && profile?.is_verified;
+          retailProducts.forEach(p => {
+            priceMap[p.id] = isDealer ? p.wholesale_price : p.retail_price;
+          });
+        }
+      }
+
+      if (wholesaleIds.length > 0) {
+        const { data: wholesaleProducts } = await (supabase as any)
+          .from("wholesale_products")
+          .select("id, sale_price")
+          .in("id", wholesaleIds);
+
+        if (wholesaleProducts) {
+          wholesaleProducts.forEach((p: any) => {
+            priceMap[p.id] = p.sale_price;
+          });
+        }
+      }
+
       // Generate order number
       const { data: orderNumber, error: orderNumError } = await supabase.rpc("generate_order_number");
       if (orderNumError) throw orderNumError;
+
+      // Recalculate totals with fresh prices
+      let freshTotal = 0;
+      const freshItems = items.map(item => {
+        const freshPrice = priceMap[item.id] ?? item.price;
+        freshTotal += freshPrice * item.quantity;
+        return { ...item, price: freshPrice };
+      });
+
+      const freshWalletDiscount = useWallet ? Math.min(walletBalance, freshTotal) : 0;
+      const freshFinal = freshTotal - freshWalletDiscount;
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -193,9 +237,9 @@ export default function Cart() {
           customer_address: customerDetails.address,
           notes: customerDetails.notes || null,
           total_items: totalItems,
-          total_amount: totalAmount,
-          discount_amount: walletDiscount,
-          final_amount: finalAmount,
+          total_amount: freshTotal,
+          discount_amount: freshWalletDiscount,
+          final_amount: freshFinal,
           user_type: (profile?.user_type || "retail") as "dealer" | "retail",
           status: "pending" as const
         }])
@@ -204,10 +248,10 @@ export default function Cart() {
 
       if (orderError) throw orderError;
 
-      // Create order items
-      const orderItems = items.map(item => ({
+      // Create order items - set product_id to null for wholesale items
+      const orderItems = freshItems.map(item => ({
         order_id: order.id,
-        product_id: item.id,
+        product_id: item.is_wholesale ? null : item.id,
         product_code: item.product_code,
         product_name: item.name,
         quantity: item.quantity,
@@ -222,10 +266,10 @@ export default function Cart() {
       if (itemsError) throw itemsError;
 
       // Deduct wallet balance if used (using secure user_wallet_purchase function)
-      if (useWallet && walletDiscount > 0 && user) {
+      if (useWallet && freshWalletDiscount > 0 && user) {
         const { error: walletError } = await supabase.rpc("user_wallet_purchase", {
           order_id: order.id,
-          purchase_amount: walletDiscount
+          purchase_amount: freshWalletDiscount
         });
 
         if (walletError) {
