@@ -59,10 +59,11 @@ export default function Auth() {
   }, [refCode]);
 
   // Redirect if already logged in
-  if (user) {
-    navigate("/products");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate("/products", { replace: true });
+    }
+  }, [user, navigate]);
 
   const validateForm = () => {
     try {
