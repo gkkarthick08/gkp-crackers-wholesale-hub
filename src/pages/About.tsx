@@ -55,7 +55,7 @@ export default function About() {
                 to every celebration with the finest fireworks at the best prices.
               </p>
               <div className="flex justify-center gap-4">
-                <Link to="/quick-order">
+                <Link to="/products">
                   <Button variant="hero" size="lg">
                     Shop Now
                   </Button>
