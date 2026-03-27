@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, ShoppingCart, Grid3X3, Star, Clock, Eye, Plus, Minus } from "lucide-react";
+import { Search, Filter, ShoppingCart, Grid3X3, Star, Clock, Eye, Plus, Minus, Package } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart, CartItem } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Product {
+interface NormalizedProduct {
   id: string;
   product_code: string;
   name: string;
@@ -24,11 +24,13 @@ interface Product {
   image_url: string | null;
   video_url: string | null;
   mrp: number;
-  retail_price: number;
-  wholesale_price: number;
+  price: number; // retail_price or sale_price
   stock: number;
   category: { name: string } | null;
   brand: { name: string } | null;
+  is_wholesale: boolean;
+  case_qty?: number;
+  case_price?: number;
 }
 
 interface Category {
@@ -39,51 +41,83 @@ interface Category {
 export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<NormalizedProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<NormalizedProduct | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { profile, isVerifiedDealer, isPendingDealer } = useAuth();
+  const { isVerifiedDealer, isPendingDealer } = useAuth();
   const { items: cartItems, addItem, updateQuantity: updateCartQuantity, removeItem, totalItems } = useCart();
   const navigate = useNavigate();
 
-  // Get cart quantity for a product
   const getCartQty = (productId: string): number => {
     const cartItem = cartItems.find((item: CartItem) => item.id === productId);
     return cartItem?.quantity || 0;
   };
 
-  // Only verified dealers see wholesale prices
-  const showWholesalePrice = isVerifiedDealer;
-
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          supabase
-            .from("products")
-            .select(`
-              *,
-              category:categories(name),
-              brand:brands(name)
-            `)
-            .eq("is_visible", true)
-            .order("display_order"),
-          supabase
-            .from("categories")
-            .select("id, name")
-            .eq("is_active", true)
-            .order("display_order")
-        ]);
+        const categoriesRes = await supabase
+          .from("categories")
+          .select("id, name")
+          .eq("is_active", true)
+          .order("display_order");
 
-        if (productsRes.data) {
-          setProducts(productsRes.data as Product[]);
-        }
-        if (categoriesRes.data) {
-          setCategories(categoriesRes.data);
+        if (categoriesRes.data) setCategories(categoriesRes.data);
+
+        if (isVerifiedDealer) {
+          // Fetch wholesale products for verified dealers
+          const res = await (supabase as any)
+            .from("wholesale_products")
+            .select(`*, category:categories(name), brand:brands(name)`)
+            .eq("is_visible", true)
+            .order("display_order");
+
+          if (res.data) {
+            setProducts(res.data.map((p: any) => ({
+              id: p.id,
+              product_code: p.product_code,
+              name: p.name,
+              description: p.description,
+              image_url: p.image_url,
+              video_url: p.video_url,
+              mrp: p.mrp,
+              price: p.sale_price,
+              stock: p.stock,
+              category: p.category,
+              brand: p.brand,
+              is_wholesale: true,
+              case_qty: p.case_qty,
+              case_price: p.case_price,
+            })));
+          }
+        } else {
+          // Fetch retail products for retail / unverified users
+          const res = await supabase
+            .from("products")
+            .select(`*, category:categories(name), brand:brands(name)`)
+            .eq("is_visible", true)
+            .order("display_order");
+
+          if (res.data) {
+            setProducts(res.data.map((p: any) => ({
+              id: p.id,
+              product_code: p.product_code,
+              name: p.name,
+              description: p.description,
+              image_url: p.image_url,
+              video_url: p.video_url,
+              mrp: p.mrp,
+              price: p.retail_price,
+              stock: p.stock,
+              category: p.category,
+              brand: p.brand,
+              is_wholesale: false,
+            })));
+          }
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -93,7 +127,7 @@ export default function Products() {
     };
 
     fetchData();
-  }, []);
+  }, [isVerifiedDealer]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
@@ -104,75 +138,55 @@ export default function Products() {
     });
   }, [products, searchQuery, selectedCategory]);
 
-  const getPrice = (product: Product) => {
-    return showWholesalePrice ? product.wholesale_price : product.retail_price;
+  const getDiscountPercent = (product: NormalizedProduct) => {
+    return Math.round(((product.mrp - product.price) / product.mrp) * 100);
   };
 
-  const getDiscountPercent = (product: Product) => {
-    const salePrice = getPrice(product);
-    return Math.round(((product.mrp - salePrice) / product.mrp) * 100);
+  const getSavings = (product: NormalizedProduct) => {
+    return product.mrp - product.price;
   };
 
-  const getSavings = (product: Product) => {
-    return product.mrp - getPrice(product);
-  };
-
-  const handleAddToEstimate = (product: Product) => {
+  const handleAddToEstimate = (product: NormalizedProduct) => {
     addItem({
       id: product.id,
       name: product.name,
       product_code: product.product_code,
-      price: getPrice(product),
+      price: product.price,
       mrp: product.mrp,
-      image_url: product.image_url
+      image_url: product.image_url,
+      is_wholesale: product.is_wholesale,
     }, 1);
-
-    toast({
-      title: "Added to Estimate Cart!",
-      description: `${product.name} added.`,
-    });
+    toast({ title: "Added to Estimate Cart!", description: `${product.name} added.` });
   };
 
-  const handleUpdateQty = (product: Product, newQty: number) => {
-    if (newQty <= 0) {
-      removeItem(product.id);
-    } else {
-      updateCartQuantity(product.id, newQty);
-    }
+  const handleUpdateQty = (product: NormalizedProduct, newQty: number) => {
+    if (newQty <= 0) removeItem(product.id);
+    else updateCartQuantity(product.id, newQty);
   };
 
-  const addToCart = (product: Product, qty: number = 1) => {
+  const addToCart = (product: NormalizedProduct, qty: number = 1) => {
     addItem({
       id: product.id,
       name: product.name,
       product_code: product.product_code,
-      price: getPrice(product),
+      price: product.price,
       mrp: product.mrp,
-      image_url: product.image_url
+      image_url: product.image_url,
+      is_wholesale: product.is_wholesale,
     }, qty);
-
-    toast({
-      title: "Added to Estimate Cart!",
-      description: `${product.name} x${qty} added.`,
-    });
+    toast({ title: "Added to Estimate Cart!", description: `${product.name} x${qty} added.` });
   };
 
-  const openProductDetail = (product: Product) => {
+  const openProductDetail = (product: NormalizedProduct) => {
     setSelectedProduct(product);
     setDetailDialogOpen(true);
   };
 
   const getProductEmoji = (categoryName: string | undefined) => {
     const emojiMap: Record<string, string> = {
-      "Ground Chakkar": "🌀",
-      "Flower Pots": "🎇",
-      "Sky Shots": "🎆",
-      "Rockets": "🚀",
-      "Sparklers": "✨",
-      "Bombs": "💥",
-      "Fountains": "⛲",
-      "Novelty": "🎭",
-      "Gift Boxes": "🎁"
+      "Ground Chakkar": "🌀", "Flower Pots": "🎇", "Sky Shots": "🎆",
+      "Rockets": "🚀", "Sparklers": "✨", "Bombs": "💥",
+      "Fountains": "⛲", "Novelty": "🎭", "Gift Boxes": "🎁"
     };
     return emojiMap[categoryName || ""] || "🧨";
   };
@@ -184,13 +198,20 @@ export default function Products() {
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <Grid3X3 className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            {isVerifiedDealer ? (
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            ) : (
+              <Grid3X3 className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            )}
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
-              Product <span className="text-gradient-hero">Catalog</span>
+              {isVerifiedDealer ? "Wholesale" : "Product"}{" "}
+              <span className="text-gradient-hero">Catalog</span>
             </h1>
           </div>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Browse our premium collection of crackers. 
+            {isVerifiedDealer
+              ? "Exclusive wholesale products with dealer pricing"
+              : "Browse our premium collection of crackers."}
             {isVerifiedDealer ? (
               <Badge variant="secondary" className="ml-2 gradient-dealer text-white text-xs">Wholesale Prices</Badge>
             ) : isPendingDealer ? (
@@ -210,7 +231,7 @@ export default function Products() {
             <Clock className="h-4 w-4 text-amber-600" />
             <AlertTitle className="text-amber-700">Retail Prices Displayed</AlertTitle>
             <AlertDescription className="text-amber-600">
-              You're currently seeing retail prices. Once your dealer account is verified, you'll have access to exclusive wholesale pricing. Your verification is under process.
+              You're currently seeing retail products & prices. Once your dealer account is verified, you'll see exclusive wholesale products & pricing.
             </AlertDescription>
           </Alert>
         )}
@@ -266,51 +287,38 @@ export default function Products() {
               const savings = getSavings(product);
               const cartQty = getCartQty(product.id);
               const isInCart = cartQty > 0;
-              
+
               return (
-                <Card 
-                  key={product.id} 
+                <Card
+                  key={product.id}
                   className={`group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 ${isInCart ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
                 >
                   <CardContent className="p-3 sm:p-4">
-                    {/* Product Image/Emoji */}
-                    <div 
+                    {/* Product Image */}
+                    <div
                       className="relative aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl mb-3 flex items-center justify-center overflow-hidden cursor-pointer"
                       onClick={() => openProductDetail(product)}
                     >
                       {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       ) : (
                         <span className="text-4xl sm:text-5xl">{getProductEmoji(product.category?.name)}</span>
                       )}
-                      
-                      {/* Discount Badge */}
                       {discount > 0 && (
                         <div className="absolute top-2 left-2 gradient-hero text-white text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                           {discount}% OFF
                         </div>
                       )}
-                      
-                      {/* In Cart Badge */}
                       {isInCart && (
                         <div className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                          <ShoppingCart className="h-3 w-3" />
-                          {cartQty} in cart
+                          <ShoppingCart className="h-3 w-3" />{cartQty} in cart
                         </div>
                       )}
-                      
-                      {/* View Details Overlay */}
                       <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <div className="bg-background/90 rounded-full p-2">
                           <Eye className="h-5 w-5 text-foreground" />
                         </div>
                       </div>
-                      
-                      {/* Brand Badge */}
                       {product.brand?.name && (
                         <div className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-border/50">
                           {product.brand.name}
@@ -320,101 +328,58 @@ export default function Products() {
 
                     {/* Product Info */}
                     <div className="space-y-2">
-                      <h3 
+                      <h3
                         className="font-semibold text-sm sm:text-base line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem] sm:min-h-[3rem] cursor-pointer"
                         onClick={() => openProductDetail(product)}
                       >
                         {product.name}
                       </h3>
-                      
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">
-                        Code: {product.product_code}
-                      </p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Code: {product.product_code}</p>
 
                       {/* Price Section */}
                       <div className="space-y-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-lg sm:text-xl font-bold text-primary">
-                            ₹{getPrice(product).toLocaleString()}
-                          </span>
-                          <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                            ₹{product.mrp.toLocaleString()}
-                          </span>
+                          <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
+                          <span className="text-xs sm:text-sm text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
                         </div>
-                        
+                        {/* Wholesale case info */}
+                        {product.is_wholesale && product.case_qty && product.case_price ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Case: {product.case_qty} pcs</span>
+                            <span className="font-bold text-primary">₹{product.case_price.toLocaleString()}/case</span>
+                          </div>
+                        ) : null}
                         {savings > 0 && (
                           <div className="flex items-center gap-1 text-accent">
                             <Star className="h-3 w-3 fill-current" />
-                            <span className="text-[10px] sm:text-xs font-medium">
-                              You save ₹{savings.toLocaleString()}
-                            </span>
+                            <span className="text-[10px] sm:text-xs font-medium">You save ₹{savings.toLocaleString()}</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Action Section - Conditional based on cart state */}
+                      {/* Action Section */}
                       <div className="pt-2">
                         {isInCart ? (
-                          // Show quantity controls when item is in cart
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUpdateQty(product, cartQty - 1);
-                                  }}
-                                >
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty - 1); }}>
                                   <Minus className="h-3 w-3" />
                                 </Button>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={cartQty}
-                                  onChange={(e) => {
-                                    const val = parseInt(e.target.value) || 0;
-                                    handleUpdateQty(product, val);
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-12 h-8 text-center text-sm px-1"
-                                />
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUpdateQty(product, cartQty + 1);
-                                  }}
-                                >
+                                <Input type="number" min="1" value={cartQty} onChange={(e) => { handleUpdateQty(product, parseInt(e.target.value) || 0); }} onClick={(e) => e.stopPropagation()} className="w-12 h-8 text-center text-sm px-1" />
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty + 1); }}>
                                   <Plus className="h-3 w-3" />
                                 </Button>
                               </div>
-                              <span className="text-sm font-bold text-primary">
-                                ₹{(getPrice(product) * cartQty).toLocaleString()}
-                              </span>
+                              <span className="text-sm font-bold text-primary">₹{(product.price * cartQty).toLocaleString()}</span>
                             </div>
                             <Badge variant="secondary" className="w-full justify-center bg-primary/10 text-primary border-primary/20 text-xs py-1">
-                              <ShoppingCart className="h-3 w-3 mr-1" />
-                              Added to Estimate
+                              <ShoppingCart className="h-3 w-3 mr-1" />Added to Estimate
                             </Badge>
                           </div>
                         ) : (
-                          // Show Add to Estimate button when not in cart
-                          <Button
-                            variant="hero"
-                            size="sm"
-                            className="w-full h-9 text-xs sm:text-sm font-medium"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddToEstimate(product);
-                            }}
-                          >
-                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
-                            Add to Estimate
+                          <Button variant="hero" size="sm" className="w-full h-9 text-xs sm:text-sm font-medium" onClick={(e) => { e.stopPropagation(); handleAddToEstimate(product); }}>
+                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />Add to Estimate
                           </Button>
                         )}
                       </div>
@@ -429,27 +394,20 @@ export default function Products() {
         {/* Floating Cart Button - Mobile */}
         {totalItems > 0 && (
           <div className="fixed bottom-4 left-4 right-4 sm:hidden z-40">
-            <Button 
-              variant="hero" 
-              size="lg" 
-              className="w-full gap-2 shadow-lg"
-              onClick={() => navigate("/cart")}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              View Estimate Cart ({totalItems} items)
+            <Button variant="hero" size="lg" className="w-full gap-2 shadow-lg" onClick={() => navigate("/cart")}>
+              <ShoppingCart className="h-5 w-5" />View Estimate Cart ({totalItems} items)
             </Button>
           </div>
         )}
       </main>
       <Footer />
       <FloatingButtons />
-      
+
       {/* Product Detail Dialog */}
       <ProductDetailDialog
         product={selectedProduct}
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
-        showWholesalePrice={showWholesalePrice}
         onAddToCart={addToCart}
       />
     </div>
