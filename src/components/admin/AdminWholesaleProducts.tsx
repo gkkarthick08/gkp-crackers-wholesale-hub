@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff, Loader2, Upload, X, Image as ImageIcon, Video } from "lucide-react";
+import BulkWholesaleOperations from "./BulkWholesaleOperations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -297,6 +298,9 @@ export default function AdminWholesaleProducts() {
           Add Wholesale Product
         </Button>
       </div>
+
+      {/* Bulk Operations */}
+      <BulkWholesaleOperations products={products} categories={categories} brands={brands} onRefresh={fetchData} />
 
       {/* Search */}
       <Card className="shadow-card mb-6">
