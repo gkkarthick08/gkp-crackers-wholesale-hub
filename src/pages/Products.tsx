@@ -377,23 +377,26 @@ export default function Products() {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty - 1); }}>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty - (product.is_wholesale ? (product.case_qty || 1) : 1)); }}>
                                   <Minus className="h-3 w-3" />
                                 </Button>
-                                <Input type="number" min="1" value={cartQty} onChange={(e) => { handleUpdateQty(product, parseInt(e.target.value) || 0); }} onClick={(e) => e.stopPropagation()} className="w-12 h-8 text-center text-sm px-1" />
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty + 1); }}>
+                                <Input type="number" min={product.is_wholesale ? (product.case_qty || 1) : 1} step={product.is_wholesale ? (product.case_qty || 1) : 1} value={cartQty} onChange={(e) => { handleUpdateQty(product, parseInt(e.target.value) || 0); }} onClick={(e) => e.stopPropagation()} className="w-14 h-8 text-center text-sm px-1" />
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty + (product.is_wholesale ? (product.case_qty || 1) : 1)); }}>
                                   <Plus className="h-3 w-3" />
                                 </Button>
                               </div>
                               <span className="text-sm font-bold text-primary">₹{(product.price * cartQty).toLocaleString()}</span>
                             </div>
+                            {product.is_wholesale && product.case_qty ? (
+                              <p className="text-[10px] text-center text-muted-foreground">{Math.round(cartQty / product.case_qty)} case(s) × {product.case_qty} pcs</p>
+                            ) : null}
                             <Badge variant="secondary" className="w-full justify-center bg-primary/10 text-primary border-primary/20 text-xs py-1">
                               <ShoppingCart className="h-3 w-3 mr-1" />Added to Estimate
                             </Badge>
                           </div>
                         ) : (
                           <Button variant="hero" size="sm" className="w-full h-9 text-xs sm:text-sm font-medium" onClick={(e) => { e.stopPropagation(); handleAddToEstimate(product); }}>
-                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />Add to Estimate
+                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />{product.is_wholesale ? "Add Case" : "Add to Estimate"}
                           </Button>
                         )}
                       </div>
