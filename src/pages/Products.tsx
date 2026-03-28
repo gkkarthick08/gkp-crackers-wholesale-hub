@@ -147,6 +147,7 @@ export default function Products() {
   };
 
   const handleAddToEstimate = (product: NormalizedProduct) => {
+    const qty = product.is_wholesale ? (product.case_qty || 1) : 1;
     addItem({
       id: product.id,
       name: product.name,
@@ -155,13 +156,16 @@ export default function Products() {
       mrp: product.mrp,
       image_url: product.image_url,
       is_wholesale: product.is_wholesale,
-    }, 1);
-    toast({ title: "Added to Estimate Cart!", description: `${product.name} added.` });
+    }, qty);
+    toast({ title: "Added to Estimate Cart!", description: `${product.name} ${product.is_wholesale ? `(1 case = ${product.case_qty} pcs)` : ""} added.` });
   };
 
   const handleUpdateQty = (product: NormalizedProduct, newQty: number) => {
-    if (newQty <= 0) removeItem(product.id);
-    else updateCartQuantity(product.id, newQty);
+    const step = product.is_wholesale ? (product.case_qty || 1) : 1;
+    // Ensure wholesale qty is always a multiple of case_qty
+    const adjusted = product.is_wholesale ? Math.max(0, Math.round(newQty / step) * step) : newQty;
+    if (adjusted <= 0) removeItem(product.id);
+    else updateCartQuantity(product.id, adjusted);
   };
 
   const addToCart = (product: NormalizedProduct, qty: number = 1) => {
@@ -338,21 +342,31 @@ export default function Products() {
 
                       {/* Price Section */}
                       <div className="space-y-1">
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
-                          <span className="text-xs sm:text-sm text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
-                        </div>
-                        {/* Wholesale case info */}
                         {product.is_wholesale && product.case_qty && product.case_price ? (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Case: {product.case_qty} pcs</span>
-                            <span className="font-bold text-primary">₹{product.case_price.toLocaleString()}/case</span>
-                          </div>
-                        ) : null}
+                          <>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-lg sm:text-xl font-bold text-primary">₹{product.case_price.toLocaleString()}</span>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground">/case</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {product.case_qty} pcs/case • ₹{product.price.toLocaleString()}/pc
+                            </div>
+                            <div className="text-xs text-muted-foreground line-through">MRP ₹{product.mrp.toLocaleString()}/pc</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
+                              <span className="text-xs sm:text-sm text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
+                            </div>
+                          </>
+                        )}
                         {savings > 0 && (
                           <div className="flex items-center gap-1 text-accent">
                             <Star className="h-3 w-3 fill-current" />
-                            <span className="text-[10px] sm:text-xs font-medium">You save ₹{savings.toLocaleString()}</span>
+                            <span className="text-[10px] sm:text-xs font-medium">
+                              {product.is_wholesale ? `Save ₹${((product.mrp - product.price) * (product.case_qty || 1)).toLocaleString()}/case` : `You save ₹${savings.toLocaleString()}`}
+                            </span>
                           </div>
                         )}
                       </div>
