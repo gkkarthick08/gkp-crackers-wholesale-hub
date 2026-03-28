@@ -235,18 +235,18 @@ export default function WholesaleCatalog() {
 
                       <div className="space-y-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-lg sm:text-xl font-bold text-primary">₹{product.sale_price.toLocaleString()}</span>
-                          <span className="text-xs sm:text-sm text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
+                          <span className="text-lg sm:text-xl font-bold text-primary">₹{product.case_price.toLocaleString()}</span>
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">/case</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Case: {product.case_qty} pcs</span>
-                          <span className="font-bold text-primary">₹{product.case_price.toLocaleString()}/case</span>
+                        <div className="text-xs text-muted-foreground">
+                          {product.case_qty} pcs/case • ₹{product.sale_price.toLocaleString()}/pc
                         </div>
+                        <div className="text-xs text-muted-foreground line-through">MRP ₹{product.mrp.toLocaleString()}/pc</div>
                         {discount > 0 && (
                           <div className="flex items-center gap-1 text-accent">
                             <Star className="h-3 w-3 fill-current" />
                             <span className="text-[10px] sm:text-xs font-medium">
-                              Save ₹{(product.mrp - product.sale_price).toLocaleString()}
+                              Save ₹{((product.mrp - product.sale_price) * product.case_qty).toLocaleString()}/case
                             </span>
                           </div>
                         )}
@@ -257,23 +257,24 @@ export default function WholesaleCatalog() {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateQty(product, cartQty - 1)}>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateQty(product, cartQty - (product.case_qty || 1))}>
                                   <Minus className="h-3 w-3" />
                                 </Button>
-                                <Input type="number" min="1" value={cartQty} onChange={(e) => handleUpdateQty(product, parseInt(e.target.value) || 0)} className="w-12 h-8 text-center text-sm px-1" />
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateQty(product, cartQty + 1)}>
+                                <Input type="number" min={product.case_qty} step={product.case_qty} value={cartQty} onChange={(e) => handleUpdateQty(product, parseInt(e.target.value) || 0)} className="w-14 h-8 text-center text-sm px-1" />
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateQty(product, cartQty + (product.case_qty || 1))}>
                                   <Plus className="h-3 w-3" />
                                 </Button>
                               </div>
                               <span className="text-sm font-bold text-primary">₹{(product.sale_price * cartQty).toLocaleString()}</span>
                             </div>
+                            <p className="text-[10px] text-center text-muted-foreground">{Math.round(cartQty / product.case_qty)} case(s) × {product.case_qty} pcs</p>
                             <Badge variant="secondary" className="w-full justify-center bg-primary/10 text-primary border-primary/20 text-xs py-1">
                               <ShoppingCart className="h-3 w-3 mr-1" /> Added to Estimate
                             </Badge>
                           </div>
                         ) : (
                           <Button variant="hero" size="sm" className="w-full h-9 text-xs sm:text-sm font-medium" onClick={() => handleAddToCart(product)}>
-                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" /> Add to Estimate
+                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" /> Add Case
                           </Button>
                         )}
                       </div>
