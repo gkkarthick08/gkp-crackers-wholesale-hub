@@ -147,6 +147,7 @@ export default function Products() {
   };
 
   const handleAddToEstimate = (product: NormalizedProduct) => {
+    const qty = product.is_wholesale ? (product.case_qty || 1) : 1;
     addItem({
       id: product.id,
       name: product.name,
@@ -155,13 +156,16 @@ export default function Products() {
       mrp: product.mrp,
       image_url: product.image_url,
       is_wholesale: product.is_wholesale,
-    }, 1);
-    toast({ title: "Added to Estimate Cart!", description: `${product.name} added.` });
+    }, qty);
+    toast({ title: "Added to Estimate Cart!", description: `${product.name} ${product.is_wholesale ? `(1 case = ${product.case_qty} pcs)` : ""} added.` });
   };
 
   const handleUpdateQty = (product: NormalizedProduct, newQty: number) => {
-    if (newQty <= 0) removeItem(product.id);
-    else updateCartQuantity(product.id, newQty);
+    const step = product.is_wholesale ? (product.case_qty || 1) : 1;
+    // Ensure wholesale qty is always a multiple of case_qty
+    const adjusted = product.is_wholesale ? Math.max(0, Math.round(newQty / step) * step) : newQty;
+    if (adjusted <= 0) removeItem(product.id);
+    else updateCartQuantity(product.id, adjusted);
   };
 
   const addToCart = (product: NormalizedProduct, qty: number = 1) => {
@@ -338,21 +342,31 @@ export default function Products() {
 
                       {/* Price Section */}
                       <div className="space-y-1">
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
-                          <span className="text-xs sm:text-sm text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
-                        </div>
-                        {/* Wholesale case info */}
                         {product.is_wholesale && product.case_qty && product.case_price ? (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Case: {product.case_qty} pcs</span>
-                            <span className="font-bold text-primary">₹{product.case_price.toLocaleString()}/case</span>
-                          </div>
-                        ) : null}
+                          <>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-lg sm:text-xl font-bold text-primary">₹{product.case_price.toLocaleString()}</span>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground">/case</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {product.case_qty} pcs/case • ₹{product.price.toLocaleString()}/pc
+                            </div>
+                            <div className="text-xs text-muted-foreground line-through">MRP ₹{product.mrp.toLocaleString()}/pc</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-lg sm:text-xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
+                              <span className="text-xs sm:text-sm text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
+                            </div>
+                          </>
+                        )}
                         {savings > 0 && (
                           <div className="flex items-center gap-1 text-accent">
                             <Star className="h-3 w-3 fill-current" />
-                            <span className="text-[10px] sm:text-xs font-medium">You save ₹{savings.toLocaleString()}</span>
+                            <span className="text-[10px] sm:text-xs font-medium">
+                              {product.is_wholesale ? `Save ₹${((product.mrp - product.price) * (product.case_qty || 1)).toLocaleString()}/case` : `You save ₹${savings.toLocaleString()}`}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -363,23 +377,26 @@ export default function Products() {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty - 1); }}>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty - (product.is_wholesale ? (product.case_qty || 1) : 1)); }}>
                                   <Minus className="h-3 w-3" />
                                 </Button>
-                                <Input type="number" min="1" value={cartQty} onChange={(e) => { handleUpdateQty(product, parseInt(e.target.value) || 0); }} onClick={(e) => e.stopPropagation()} className="w-12 h-8 text-center text-sm px-1" />
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty + 1); }}>
+                                <Input type="number" min={product.is_wholesale ? (product.case_qty || 1) : 1} step={product.is_wholesale ? (product.case_qty || 1) : 1} value={cartQty} onChange={(e) => { handleUpdateQty(product, parseInt(e.target.value) || 0); }} onClick={(e) => e.stopPropagation()} className="w-14 h-8 text-center text-sm px-1" />
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleUpdateQty(product, cartQty + (product.is_wholesale ? (product.case_qty || 1) : 1)); }}>
                                   <Plus className="h-3 w-3" />
                                 </Button>
                               </div>
                               <span className="text-sm font-bold text-primary">₹{(product.price * cartQty).toLocaleString()}</span>
                             </div>
+                            {product.is_wholesale && product.case_qty ? (
+                              <p className="text-[10px] text-center text-muted-foreground">{Math.round(cartQty / product.case_qty)} case(s) × {product.case_qty} pcs</p>
+                            ) : null}
                             <Badge variant="secondary" className="w-full justify-center bg-primary/10 text-primary border-primary/20 text-xs py-1">
                               <ShoppingCart className="h-3 w-3 mr-1" />Added to Estimate
                             </Badge>
                           </div>
                         ) : (
                           <Button variant="hero" size="sm" className="w-full h-9 text-xs sm:text-sm font-medium" onClick={(e) => { e.stopPropagation(); handleAddToEstimate(product); }}>
-                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />Add to Estimate
+                            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />{product.is_wholesale ? "Add Case" : "Add to Estimate"}
                           </Button>
                         )}
                       </div>
