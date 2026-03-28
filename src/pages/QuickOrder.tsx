@@ -326,7 +326,12 @@ export default function QuickOrder() {
                         </td>
                         {isVerifiedDealer && (
                           <td className="text-center text-sm text-muted-foreground">
-                            {product.case_qty || "-"}
+                            {product.case_qty || "-"} pcs
+                          </td>
+                        )}
+                        {isVerifiedDealer && (
+                          <td className="text-right font-bold text-primary text-sm">
+                            ₹{product.case_price?.toLocaleString() || "-"}
                           </td>
                         )}
                         <td>
@@ -334,10 +339,13 @@ export default function QuickOrder() {
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, -1)}>
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <Input type="number" min="0" value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-8 text-center" />
+                            <Input type="number" min="0" step={product.is_wholesale ? (product.case_qty || 1) : 1} value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-8 text-center" />
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, 1)}>
                               <Plus className="h-3 w-3" />
                             </Button>
+                            {product.is_wholesale && qty > 0 && product.case_qty ? (
+                              <span className="text-[10px] text-muted-foreground ml-1">{Math.round(qty / product.case_qty)}cs</span>
+                            ) : null}
                           </div>
                         </td>
                         <td className="text-right font-bold text-primary">
