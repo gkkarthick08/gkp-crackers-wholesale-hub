@@ -420,7 +420,7 @@ export default function QuickOrder() {
                         </div>
                         {product.is_wholesale && product.case_qty ? (
                           <p className="text-xs text-muted-foreground mb-2">
-                            Case: {product.case_qty} pcs • ₹{product.case_price?.toLocaleString()}/case
+                            {product.case_qty} pcs/case • ₹{product.case_price?.toLocaleString()}/case
                           </p>
                         ) : null}
 
@@ -430,12 +430,17 @@ export default function QuickOrder() {
                             <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => updateQuantity(product.id, -1)}>
                               <Minus className="h-4 w-4" />
                             </Button>
-                            <Input type="number" min="0" value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-9 text-center font-medium" />
+                            <Input type="number" min="0" step={product.is_wholesale ? (product.case_qty || 1) : 1} value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-9 text-center font-medium" />
                             <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => updateQuantity(product.id, 1)}>
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
-                          {amount > 0 && <p className="font-bold text-primary">₹{amount.toLocaleString()}</p>}
+                          <div className="text-right">
+                            {amount > 0 && <p className="font-bold text-primary">₹{amount.toLocaleString()}</p>}
+                            {product.is_wholesale && qty > 0 && product.case_qty ? (
+                              <p className="text-[10px] text-muted-foreground">{Math.round(qty / product.case_qty)} case(s)</p>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     </div>

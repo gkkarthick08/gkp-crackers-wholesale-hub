@@ -90,6 +90,7 @@ export default function WholesaleCatalog() {
   };
 
   const handleAddToCart = (product: WholesaleProduct) => {
+    const qty = product.case_qty || 1;
     addItem({
       id: product.id,
       name: product.name,
@@ -98,13 +99,15 @@ export default function WholesaleCatalog() {
       mrp: product.mrp,
       image_url: product.image_url,
       is_wholesale: true
-    }, 1);
-    toast({ title: "Added to Estimate Cart!", description: `${product.name} added.` });
+    }, qty);
+    toast({ title: "Added to Estimate Cart!", description: `${product.name} (1 case = ${product.case_qty} pcs) added.` });
   };
 
   const handleUpdateQty = (product: WholesaleProduct, newQty: number) => {
-    if (newQty <= 0) removeItem(product.id);
-    else updateCartQuantity(product.id, newQty);
+    const step = product.case_qty || 1;
+    const adjusted = Math.max(0, Math.round(newQty / step) * step);
+    if (adjusted <= 0) removeItem(product.id);
+    else updateCartQuantity(product.id, adjusted);
   };
 
   if (!user) {
