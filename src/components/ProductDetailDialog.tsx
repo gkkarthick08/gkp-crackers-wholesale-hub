@@ -42,7 +42,8 @@ export default function ProductDetailDialog({
 
   useEffect(() => {
     if (product) {
-      setQuantity(1);
+      // For wholesale, start with case_qty (1 case)
+      setQuantity(product.is_wholesale && product.case_qty ? product.case_qty : 1);
       setShowVideo(false);
     }
   }, [product?.id]);
@@ -54,9 +55,12 @@ export default function ProductDetailDialog({
 
   const handleAddToCart = () => {
     onAddToCart(product, quantity);
-    setQuantity(1);
+    setQuantity(product.is_wholesale && product.case_qty ? product.case_qty : 1);
     onOpenChange(false);
   };
+
+  const step = product.is_wholesale && product.case_qty ? product.case_qty : 1;
+  const cases = product.is_wholesale && product.case_qty ? Math.round(quantity / product.case_qty) : null;
 
   const getEmbedUrl = (url: string) => {
     if (url.includes('youtube.com/watch')) {
@@ -143,26 +147,37 @@ export default function ProductDetailDialog({
 
           {/* Pricing */}
           <div className="space-y-3">
-            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
-              <span className="text-2xl sm:text-3xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
-              <span className="text-base sm:text-lg text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
-              <Badge variant="secondary" className="bg-accent/50 text-accent-foreground border-accent text-xs">
-                {product.is_wholesale ? "Wholesale" : "Retail"}
-              </Badge>
-            </div>
-
-            {/* Wholesale case info */}
             {product.is_wholesale && product.case_qty && product.case_price ? (
-              <div className="flex items-center gap-3 text-sm bg-muted/50 p-2 rounded-lg">
-                <span>Case: <strong>{product.case_qty} pcs</strong></span>
-                <span>Case Price: <strong className="text-primary">₹{product.case_price.toLocaleString()}</strong></span>
+              <>
+                <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+                  <span className="text-2xl sm:text-3xl font-bold text-primary">₹{product.case_price.toLocaleString()}</span>
+                  <span className="text-sm text-muted-foreground">/case</span>
+                  <Badge variant="secondary" className="bg-accent/50 text-accent-foreground border-accent text-xs">Wholesale</Badge>
+                </div>
+                <div className="flex items-center gap-3 text-sm bg-muted/50 p-3 rounded-lg">
+                  <span>{product.case_qty} pcs/case</span>
+                  <span>•</span>
+                  <span>₹{product.price.toLocaleString()}/pc</span>
+                  <span>•</span>
+                  <span className="text-muted-foreground line-through">MRP ₹{product.mrp.toLocaleString()}/pc</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+                <span className="text-2xl sm:text-3xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
+                <span className="text-base sm:text-lg text-muted-foreground line-through">₹{product.mrp.toLocaleString()}</span>
+                <Badge variant="secondary" className="bg-accent/50 text-accent-foreground border-accent text-xs">Retail</Badge>
               </div>
-            ) : null}
+            )}
 
             {savings > 0 && (
               <div className="flex items-center gap-2 text-primary bg-primary/5 p-2 rounded-lg">
                 <Star className="h-4 w-4 fill-current flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">You save ₹{savings.toLocaleString()} on this purchase!</span>
+                <span className="font-medium text-sm sm:text-base">
+                  {product.is_wholesale && product.case_qty
+                    ? `You save ₹${(savings * product.case_qty).toLocaleString()} per case!`
+                    : `You save ₹${savings.toLocaleString()} on this purchase!`}
+                </span>
               </div>
             )}
           </div>
@@ -172,17 +187,20 @@ export default function ProductDetailDialog({
           {/* Add to Cart */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 sticky bottom-0 bg-background pt-4 border-t border-border/50">
             <div className="flex items-center justify-center gap-3 bg-muted rounded-xl p-2 flex-shrink-0">
-              <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+              <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setQuantity(Math.max(step, quantity - step))}>
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="w-12 text-center text-xl font-bold">{quantity}</span>
-              <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setQuantity(quantity + 1)}>
+              <div className="w-16 text-center">
+                <span className="text-xl font-bold">{quantity}</span>
+                {cases !== null && <p className="text-[10px] text-muted-foreground">{cases} case(s)</p>}
+              </div>
+              <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setQuantity(quantity + step)}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
             <Button variant="hero" size="lg" className="flex-1 gap-2 h-12" onClick={handleAddToCart}>
               <ShoppingCart className="h-5 w-5" />
-              Add to Estimate - ₹{(product.price * quantity).toLocaleString()}
+              {product.is_wholesale ? `Add ${cases} Case(s)` : "Add to Estimate"} - ₹{(product.price * quantity).toLocaleString()}
             </Button>
           </div>
 
