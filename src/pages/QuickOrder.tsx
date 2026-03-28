@@ -118,19 +118,23 @@ export default function QuickOrder() {
 
   const updateQuantity = (productId: string, delta: number) => {
     const current = quantities[productId] || 0;
-    const newValue = Math.max(0, current + delta);
     const product = products.find(p => p.id === productId);
     if (!product) return;
-    if (newValue === 0) {
+    const step = product.is_wholesale ? (product.case_qty || 1) : 1;
+    const actualDelta = delta > 0 ? step : -step;
+    const newValue = Math.max(0, current + actualDelta);
+    // Ensure wholesale qty is always a multiple of case_qty
+    const adjusted = product.is_wholesale ? Math.round(newValue / step) * step : newValue;
+    if (adjusted <= 0) {
       removeItem(productId);
     } else if (current === 0) {
       addItem({
         id: product.id, name: product.name, product_code: product.product_code,
         price: product.price, mrp: product.mrp, image_url: product.image_url,
         is_wholesale: product.is_wholesale,
-      }, newValue);
+      }, adjusted);
     } else {
-      updateCartQty(productId, newValue);
+      updateCartQty(productId, adjusted);
     }
   };
 
@@ -138,16 +142,18 @@ export default function QuickOrder() {
     const numValue = parseInt(value) || 0;
     const product = products.find(p => p.id === productId);
     if (!product) return;
-    if (numValue <= 0) {
+    const step = product.is_wholesale ? (product.case_qty || 1) : 1;
+    const adjusted = product.is_wholesale ? Math.round(numValue / step) * step : numValue;
+    if (adjusted <= 0) {
       removeItem(productId);
     } else if ((quantities[productId] || 0) === 0) {
       addItem({
         id: product.id, name: product.name, product_code: product.product_code,
         price: product.price, mrp: product.mrp, image_url: product.image_url,
         is_wholesale: product.is_wholesale,
-      }, numValue);
+      }, adjusted);
     } else {
-      updateCartQty(productId, numValue);
+      updateCartQty(productId, adjusted);
     }
   };
 
@@ -259,9 +265,10 @@ export default function QuickOrder() {
                   <th>Product</th>
                   <th className="w-24">Brand</th>
                   <th className="w-24 text-right">MRP</th>
-                  <th className="w-28 text-right">{isVerifiedDealer ? "Wholesale" : "Price"}</th>
+                  <th className="w-28 text-right">{isVerifiedDealer ? "Price/pc" : "Price"}</th>
                   {isVerifiedDealer && <th className="w-24 text-center">Case Qty</th>}
-                  <th className="w-40 text-center">Quantity</th>
+                  {isVerifiedDealer && <th className="w-28 text-right">Case Price</th>}
+                  <th className="w-40 text-center">{isVerifiedDealer ? "Cases" : "Quantity"}</th>
                   <th className="w-28 text-right">Amount</th>
                   <th className="w-16"></th>
                 </tr>
@@ -269,14 +276,14 @@ export default function QuickOrder() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={isVerifiedDealer ? 10 : 9} className="text-center py-12">
+                    <td colSpan={isVerifiedDealer ? 11 : 9} className="text-center py-12">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                       <p className="text-muted-foreground mt-2">Loading products...</p>
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={isVerifiedDealer ? 10 : 9} className="text-center py-12">
+                    <td colSpan={isVerifiedDealer ? 11 : 9} className="text-center py-12">
                       <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                       <p className="text-muted-foreground">No products found</p>
                     </td>
