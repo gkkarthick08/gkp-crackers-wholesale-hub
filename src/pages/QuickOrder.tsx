@@ -177,7 +177,7 @@ export default function QuickOrder() {
     addItem({
       id: product.id, name: product.name, product_code: product.product_code,
       price: product.price, mrp: product.mrp, image_url: product.image_url,
-      is_wholesale: product.is_wholesale,
+      is_wholesale: product.is_wholesale, case_qty: product.case_qty, case_price: product.case_price,
     }, quantity);
     toast({ title: "Added to Estimate Cart!", description: `${product.name} x${quantity} added.` });
   };

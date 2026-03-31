@@ -179,6 +179,8 @@ export default function Products() {
       mrp: product.mrp,
       image_url: product.image_url,
       is_wholesale: product.is_wholesale,
+      case_qty: product.case_qty,
+      case_price: product.case_price,
     }, qty);
     toast({ title: "Added to Estimate Cart!", description: `${product.name} x${qty} added.` });
   };
