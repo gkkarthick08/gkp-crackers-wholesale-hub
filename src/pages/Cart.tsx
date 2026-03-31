@@ -123,9 +123,15 @@ export default function Cart() {
     
     items.forEach((item, index) => {
       const itemSaving = (item.mrp - item.price) * item.quantity;
+      const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
       message += `${index + 1}. ${item.name}\n`;
-      message += `   MRP: ₹${item.mrp} → Sale: ₹${item.price}\n`;
-      message += `   Qty: ${item.quantity} × ₹${item.price} = ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      message += `   MRP: ₹${item.mrp}/pc → Sale: ₹${item.price}/pc\n`;
+      if (item.is_wholesale && item.case_qty) {
+        message += `   Case: ${item.case_qty} pcs × ₹${item.price} = ₹${item.case_price?.toLocaleString()}/case\n`;
+        message += `   Qty: ${cases} case(s) = ${item.quantity} pcs → ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      } else {
+        message += `   Qty: ${item.quantity} × ₹${item.price} = ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      }
       if (itemSaving > 0) {
         message += `   💰 Saving: ₹${itemSaving.toLocaleString()}\n`;
       }
