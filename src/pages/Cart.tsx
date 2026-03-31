@@ -123,9 +123,15 @@ export default function Cart() {
     
     items.forEach((item, index) => {
       const itemSaving = (item.mrp - item.price) * item.quantity;
+      const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
       message += `${index + 1}. ${item.name}\n`;
-      message += `   MRP: ₹${item.mrp} → Sale: ₹${item.price}\n`;
-      message += `   Qty: ${item.quantity} × ₹${item.price} = ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      message += `   MRP: ₹${item.mrp}/pc → Sale: ₹${item.price}/pc\n`;
+      if (item.is_wholesale && item.case_qty) {
+        message += `   Case: ${item.case_qty} pcs × ₹${item.price} = ₹${item.case_price?.toLocaleString()}/case\n`;
+        message += `   Qty: ${cases} case(s) = ${item.quantity} pcs → ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      } else {
+        message += `   Qty: ${item.quantity} × ₹${item.price} = ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      }
       if (itemSaving > 0) {
         message += `   💰 Saving: ₹${itemSaving.toLocaleString()}\n`;
       }
@@ -384,6 +390,8 @@ export default function Cart() {
             {items.map(item => {
               const itemSaving = (item.mrp - item.price) * item.quantity;
               const discountPercent = Math.round(((item.mrp - item.price) / item.mrp) * 100);
+              const step = item.is_wholesale && item.case_qty ? item.case_qty : 1;
+              const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
               
               return (
                 <Card key={item.id} className="shadow-card">
@@ -397,7 +405,7 @@ export default function Cart() {
                           <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                         )}
                         {discountPercent > 0 && (
-                          <div className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold px-1 rounded">
+                          <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-1 rounded">
                             {discountPercent}%
                           </div>
                         )}
@@ -407,6 +415,11 @@ export default function Cart() {
                           <div className="min-w-0">
                             <h3 className="font-semibold text-sm sm:text-base truncate">{item.name}</h3>
                             <p className="text-xs text-muted-foreground">Code: {item.product_code}</p>
+                            {item.is_wholesale && item.case_qty && (
+                              <p className="text-xs text-muted-foreground">
+                                {item.case_qty} pcs/case • ₹{item.case_price?.toLocaleString()}/case
+                              </p>
+                            )}
                           </div>
                           <Button
                             variant="ghost"
@@ -418,10 +431,10 @@ export default function Cart() {
                           </Button>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-muted-foreground line-through">₹{item.mrp}</span>
-                          <span className="font-bold text-primary text-sm">₹{item.price}</span>
+                          <span className="text-xs text-muted-foreground line-through">₹{item.mrp}/pc</span>
+                          <span className="font-bold text-primary text-sm">₹{item.price}/pc</span>
                           {discountPercent > 0 && (
-                            <span className="text-[10px] sm:text-xs text-green-600 font-medium">
+                            <span className="text-[10px] sm:text-xs text-accent font-medium">
                               {discountPercent}% OFF
                             </span>
                           )}
@@ -432,16 +445,19 @@ export default function Cart() {
                               variant="outline"
                               size="icon"
                               className="h-7 w-7 sm:h-8 sm:w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - step))}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-8 sm:w-10 text-center font-semibold text-sm">{item.quantity}</span>
+                            <div className="w-12 sm:w-14 text-center">
+                              <span className="font-semibold text-sm">{item.quantity}</span>
+                              {cases !== null && <p className="text-[9px] text-muted-foreground">{cases} case(s)</p>}
+                            </div>
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-7 w-7 sm:h-8 sm:w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity + step)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -449,7 +465,7 @@ export default function Cart() {
                           <div className="text-right">
                             <p className="font-bold text-sm sm:text-base">₹{(item.price * item.quantity).toLocaleString()}</p>
                             {itemSaving > 0 && (
-                              <p className="text-[10px] sm:text-xs text-green-600">Save ₹{itemSaving.toLocaleString()}</p>
+                              <p className="text-[10px] sm:text-xs text-accent">Save ₹{itemSaving.toLocaleString()}</p>
                             )}
                           </div>
                         </div>

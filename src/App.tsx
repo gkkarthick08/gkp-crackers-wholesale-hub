@@ -20,6 +20,7 @@ import Orders from "./pages/Orders";
 import Account from "./pages/Account";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import POS from "./pages/POS";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/account" element={<Account />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/pos" element={<POS />} />
 
               {/* ADMIN ROUTES */}
               <Route path="/admin/*" element={<Admin />} />

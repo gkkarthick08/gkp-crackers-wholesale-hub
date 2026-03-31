@@ -9,6 +9,8 @@ export interface CartItem {
   mrp: number;
   quantity: number;
   is_wholesale?: boolean;
+  case_qty?: number;
+  case_price?: number;
 }
 
 interface CartContextType {
