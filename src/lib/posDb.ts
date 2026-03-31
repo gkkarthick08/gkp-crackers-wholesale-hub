@@ -86,10 +86,9 @@ export async function getUnsyncedOrders(): Promise<PosOrder[]> {
   const db = await openDb();
   const tx = db.transaction("pos_orders", "readonly");
   const store = tx.objectStore("pos_orders");
-  const index = store.index("synced");
   return new Promise((resolve, reject) => {
-    const req = index.getAll(false);
-    req.onsuccess = () => resolve(req.result);
+    const req = store.getAll();
+    req.onsuccess = () => resolve((req.result as PosOrder[]).filter(o => !o.synced));
     req.onerror = () => reject(req.error);
   });
 }
