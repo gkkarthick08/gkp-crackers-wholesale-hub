@@ -98,7 +98,9 @@ export default function WholesaleCatalog() {
       price: product.sale_price,
       mrp: product.mrp,
       image_url: product.image_url,
-      is_wholesale: true
+      is_wholesale: true,
+      case_qty: product.case_qty,
+      case_price: product.case_price,
     }, qty);
     toast({ title: "Added to Estimate Cart!", description: `${product.name} (1 case = ${product.case_qty} pcs) added.` });
   };
