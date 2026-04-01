@@ -342,6 +342,19 @@ export default function POS() {
 
   const printReceipt = () => window.print();
 
+  // Auth guard (after all hooks)
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
   // ==================== RECEIPT VIEW ====================
   if (showReceipt) {
     const receiptMrpTotal = showReceipt.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
