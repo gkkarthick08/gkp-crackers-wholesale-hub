@@ -709,7 +709,7 @@ export default function POS() {
                   <span>Sale Total</span>
                   <span>₹{cartSaleTotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-green-600 font-medium">
+                <div className="flex justify-between text-accent font-medium">
                   <span>You Save</span>
                   <span>-₹{cartSavings.toLocaleString()}</span>
                 </div>
