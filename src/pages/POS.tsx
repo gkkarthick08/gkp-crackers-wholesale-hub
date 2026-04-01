@@ -65,19 +65,6 @@ export default function POS() {
   const [editQtyValue, setEditQtyValue] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Auth guard
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-
   // Online/offline detection
   useEffect(() => {
     const goOnline = () => setIsOnline(true);
