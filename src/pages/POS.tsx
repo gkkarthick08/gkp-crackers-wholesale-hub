@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   Search, Plus, Minus, ShoppingCart, Trash2, Receipt, Wifi, WifiOff,
   Package, User, Phone, CreditCard, Banknote, Smartphone, Printer,
-  RefreshCw, ToggleLeft, ToggleRight, ArrowLeft, X, Store
+  RefreshCw, ArrowLeft, X, Store, Edit3, UserSearch, Truck, PackageCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   cacheProducts, getCachedProducts, savePosOrder, getUnsyncedOrders,
-  markOrderSynced, getAllPosOrders, PosOrder, PosOrderItem
+  markOrderSynced, PosOrder, PosOrderItem
 } from "@/lib/posDb";
 
 interface PosProduct {
@@ -25,7 +25,7 @@ interface PosProduct {
   name: string;
   image_url: string | null;
   mrp: number;
-  price: number; // retail_price or sale_price
+  price: number;
   stock: number;
   category_name: string;
   brand_name: string;
@@ -41,10 +41,9 @@ interface PosCartItem extends PosProduct {
 export default function POS() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, isLoading: authLoading, user } = useAuth();
 
   const [billingMode, setBillingMode] = useState<"retail" | "wholesale">("retail");
-  const [posMode, setPosMode] = useState<"admin" | "self">("admin");
   const [products, setProducts] = useState<PosProduct[]>([]);
   const [cart, setCart] = useState<PosCartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,10 +53,16 @@ export default function POS() {
   const [isLoading, setIsLoading] = useState(true);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "upi" | "card">("cash");
   const [unsyncedCount, setUnsyncedCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showReceipt, setShowReceipt] = useState<PosOrder | null>(null);
+  const [packingCharges, setPackingCharges] = useState(0);
+  const [deliveryCharges, setDeliveryCharges] = useState(0);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
+  const [editQtyValue, setEditQtyValue] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Online/offline detection
@@ -72,12 +77,10 @@ export default function POS() {
     };
   }, []);
 
-  // Count unsynced
   useEffect(() => {
     getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
   }, [showReceipt]);
 
-  // Load products
   useEffect(() => {
     loadProducts();
   }, [billingMode]);
@@ -125,7 +128,6 @@ export default function POS() {
           }
         }
       } else {
-        // Offline: load from IndexedDB
         const storeName = billingMode === "wholesale" ? "wholesale_products" : "products";
         const cached = await getCachedProducts(storeName);
         setProducts(cached);
@@ -134,12 +136,40 @@ export default function POS() {
       }
     } catch (err) {
       console.error("Error loading POS products:", err);
-      // Fallback to offline cache
       const storeName = billingMode === "wholesale" ? "wholesale_products" : "products";
       const cached = await getCachedProducts(storeName);
       setProducts(cached);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Customer lookup by phone
+  const lookupCustomer = async () => {
+    if (!customerPhone || customerPhone.length < 10 || !isOnline) return;
+    setIsLookingUp(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, phone, address, business_name, user_type")
+        .eq("phone", customerPhone)
+        .maybeSingle();
+      if (data) {
+        setCustomerName(data.full_name || "");
+        setCustomerAddress(data.address || "");
+        toast({ title: "Customer found!", description: `${data.full_name}${data.business_name ? ` — ${data.business_name}` : ""}` });
+        if (data.user_type === "dealer" && billingMode === "retail") {
+          setBillingMode("wholesale");
+          setCart([]);
+          toast({ title: "Switched to wholesale", description: "Customer is a dealer" });
+        }
+      } else {
+        toast({ title: "Customer not found", description: "No profile with this phone number", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Lookup failed", variant: "destructive" });
+    } finally {
+      setIsLookingUp(false);
     }
   };
 
@@ -180,8 +210,29 @@ export default function POS() {
 
   const clearCart = useCallback(() => setCart([]), []);
 
-  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
+  // Qty edit handlers
+  const startEditQty = (item: PosCartItem) => {
+    setEditingQtyId(item.id);
+    setEditQtyValue(String(item.quantity));
+  };
+
+  const commitEditQty = (item: PosCartItem) => {
+    let val = parseInt(editQtyValue) || 0;
+    if (item.is_wholesale && item.case_qty && item.case_qty > 1) {
+      val = Math.max(item.case_qty, Math.round(val / item.case_qty) * item.case_qty);
+    }
+    if (val <= 0) val = item.is_wholesale && item.case_qty ? item.case_qty : 1;
+    updateCartQty(item.id, val);
+    setEditingQtyId(null);
+  };
+
+  // Billing calculations
   const cartMrpTotal = useMemo(() => cart.reduce((s, i) => s + i.mrp * i.quantity, 0), [cart]);
+  const cartSaleTotal = useMemo(() => cart.reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
+  const cartSavings = cartMrpTotal - cartSaleTotal;
+  const subtotal = cartSaleTotal + packingCharges + deliveryCharges;
+  const roundOff = Math.round(subtotal) - subtotal;
+  const grandTotal = Math.round(subtotal);
   const cartItemCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
 
   // Generate bill
@@ -206,16 +257,14 @@ export default function POS() {
         total_price: i.price * i.quantity,
         is_wholesale: i.is_wholesale,
       })),
-      total_amount: cartTotal,
+      total_amount: grandTotal,
       payment_method: paymentMethod,
       billing_mode: billingMode,
       synced: false,
     };
 
-    // Save to IndexedDB
     await savePosOrder(order);
 
-    // Try to sync immediately if online
     if (isOnline) {
       try {
         await syncSingleOrder(order);
@@ -230,7 +279,10 @@ export default function POS() {
     setCart([]);
     setCustomerName("");
     setCustomerPhone("");
-    toast({ title: "Bill generated!", description: `Order total: ₹${cartTotal.toLocaleString()}` });
+    setCustomerAddress("");
+    setPackingCharges(0);
+    setDeliveryCharges(0);
+    toast({ title: "Bill generated!", description: `Order total: ₹${grandTotal.toLocaleString()}` });
   };
 
   const syncSingleOrder = async (order: PosOrder) => {
@@ -288,61 +340,80 @@ export default function POS() {
     }
   };
 
-  // Receipt print
-  const printReceipt = () => {
-    window.print();
-  };
+  const printReceipt = () => window.print();
 
-  // Redirect non-admins away (admins only for admin mode)
-  if (!isAdmin && posMode === "admin") {
-    // Allow self-checkout for non-admins
+  // Auth guard (after all hooks)
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  // Receipt view
+  if (!user || !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  // ==================== RECEIPT VIEW ====================
   if (showReceipt) {
+    const receiptMrpTotal = showReceipt.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <div className="max-w-md mx-auto bg-card border border-border rounded-2xl p-6 shadow-card print:shadow-none print:border-none" id="receipt">
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <h1 className="text-2xl font-bold">🎆 GKP Crackers</h1>
-            <p className="text-sm text-muted-foreground">POS Receipt</p>
+            <p className="text-xs text-muted-foreground">Tax Invoice / Bill of Supply</p>
             <Separator className="my-3" />
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-xs text-muted-foreground space-y-0.5">
               <p>{new Date(showReceipt.created_at).toLocaleString()}</p>
-              <p>Customer: {showReceipt.customer_name}</p>
+              <p className="font-medium text-foreground">Customer: {showReceipt.customer_name}</p>
               {showReceipt.customer_phone && <p>Phone: {showReceipt.customer_phone}</p>}
-              <p>Payment: {showReceipt.payment_method.toUpperCase()} | {showReceipt.billing_mode.toUpperCase()}</p>
+              <p>Payment: {showReceipt.payment_method.toUpperCase()} | Mode: {showReceipt.billing_mode.toUpperCase()}</p>
             </div>
           </div>
-          <Separator className="mb-4" />
-          <table className="w-full text-sm mb-4">
+
+          <table className="w-full text-xs mb-3">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-1">Item</th>
-                <th className="text-center py-1">Qty</th>
-                <th className="text-right py-1">Price</th>
-                <th className="text-right py-1">Total</th>
+              <tr className="border-b border-border text-muted-foreground">
+                <th className="text-left py-1.5">#</th>
+                <th className="text-left py-1.5">Item</th>
+                <th className="text-center py-1.5">Qty</th>
+                <th className="text-right py-1.5">MRP</th>
+                <th className="text-right py-1.5">Rate</th>
+                <th className="text-right py-1.5">Total</th>
               </tr>
             </thead>
             <tbody>
               {showReceipt.items.map((item, i) => (
                 <tr key={i} className="border-b border-border/30">
-                  <td className="py-1.5 text-xs">{item.product_name}</td>
-                  <td className="text-center py-1.5">{item.quantity}</td>
-                  <td className="text-right py-1.5">₹{item.unit_price}</td>
-                  <td className="text-right py-1.5 font-medium">₹{item.total_price.toLocaleString()}</td>
+                  <td className="py-1">{i + 1}</td>
+                  <td className="py-1">{item.product_name}</td>
+                  <td className="text-center py-1">{item.quantity}</td>
+                  <td className="text-right py-1 text-muted-foreground">₹{(item.unit_price * 1.2).toFixed(0)}</td>
+                  <td className="text-right py-1">₹{item.unit_price}</td>
+                  <td className="text-right py-1 font-medium">₹{item.total_price.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <Separator className="mb-3" />
-          <div className="flex justify-between text-lg font-bold">
-            <span>TOTAL</span>
-            <span className="text-primary">₹{showReceipt.total_amount.toLocaleString()}</span>
+
+          <div className="space-y-1 text-xs border-t border-border pt-2">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Sale Total</span>
+              <span>₹{receiptMrpTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold pt-1 border-t border-border">
+              <span>GRAND TOTAL</span>
+              <span className="text-primary">₹{showReceipt.total_amount.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="text-center text-xs text-muted-foreground mt-4 mb-6">
-            {showReceipt.synced ? "✅ Synced to server" : "⏳ Pending sync"}
+
+          <div className="text-center text-[10px] text-muted-foreground mt-4 mb-4 space-y-0.5">
+            <p>{showReceipt.synced ? "✅ Synced" : "⏳ Pending sync"}</p>
+            <p>Thank you for your purchase! 🎉</p>
           </div>
+
           <div className="flex gap-3 print:hidden">
             <Button variant="outline" className="flex-1 gap-2" onClick={printReceipt}>
               <Printer className="h-4 w-4" />Print
@@ -356,27 +427,25 @@ export default function POS() {
     );
   }
 
+  // ==================== MAIN POS VIEW ====================
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Bar */}
-      <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-between gap-3 sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
+      <div className="bg-card border-b border-border px-3 py-2.5 flex items-center justify-between gap-2 sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/admin")}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-bold hidden sm:block">POS System</h1>
-          </div>
+          <Store className="h-5 w-5 text-primary" />
+          <h1 className="text-sm font-bold hidden sm:block">POS System</h1>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Billing Mode Toggle */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Button
             variant={billingMode === "retail" ? "default" : "outline"}
             size="sm"
             onClick={() => { setBillingMode("retail"); setCart([]); }}
-            className="text-xs"
+            className="text-xs h-8 px-2.5"
           >
             Retail
           </Button>
@@ -384,35 +453,26 @@ export default function POS() {
             variant={billingMode === "wholesale" ? "default" : "outline"}
             size="sm"
             onClick={() => { setBillingMode("wholesale"); setCart([]); }}
-            className="text-xs"
+            className="text-xs h-8 px-2.5"
           >
             Wholesale
           </Button>
 
-          <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="h-5" />
 
-          {/* Online/Offline indicator */}
-          <div className="flex items-center gap-1">
-            {isOnline ? (
-              <Badge variant="secondary" className="bg-accent/20 text-accent-foreground text-xs gap-1">
-                <Wifi className="h-3 w-3" />Online
-              </Badge>
-            ) : (
-              <Badge variant="destructive" className="text-xs gap-1">
-                <WifiOff className="h-3 w-3" />Offline
-              </Badge>
-            )}
-          </div>
+          {isOnline ? (
+            <Badge variant="secondary" className="bg-accent/20 text-accent-foreground text-[10px] gap-1 px-1.5">
+              <Wifi className="h-3 w-3" />Online
+            </Badge>
+          ) : (
+            <Badge variant="destructive" className="text-[10px] gap-1 px-1.5">
+              <WifiOff className="h-3 w-3" />Offline
+            </Badge>
+          )}
 
-          {/* Sync button */}
           {unsyncedCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={syncAllOrders}
-              disabled={!isOnline || isSyncing}
-              className="gap-1 text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={syncAllOrders}
+              disabled={!isOnline || isSyncing} className="gap-1 text-xs h-8">
               <RefreshCw className={`h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
               Sync ({unsyncedCount})
             </Button>
@@ -422,23 +482,17 @@ export default function POS() {
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Product List (Left Panel) */}
+        {/* Product List */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Search & Filter */}
           <div className="p-3 flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                ref={searchRef}
-                placeholder="Search product or scan barcode..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10"
-                autoFocus
-              />
+              <Input ref={searchRef} placeholder="Search product or scan barcode..."
+                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10" autoFocus />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[140px] h-10">
+              <SelectTrigger className="w-[130px] h-10">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -450,7 +504,6 @@ export default function POS() {
             </Select>
           </div>
 
-          {/* Product Grid */}
           <div className="flex-1 overflow-y-auto p-3 pt-0">
             {isLoading ? (
               <div className="flex items-center justify-center h-40">
@@ -464,7 +517,7 @@ export default function POS() {
                     <button
                       key={product.id}
                       onClick={() => addToCart(product)}
-                      className={`text-left p-3 rounded-xl border transition-all hover:shadow-md ${
+                      className={`text-left p-2.5 rounded-xl border transition-all hover:shadow-md ${
                         inCart
                           ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                           : "border-border bg-card hover:border-primary/30"
@@ -506,48 +559,49 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Cart Panel (Right Panel) */}
+        {/* ==================== CART PANEL ==================== */}
         <div className="w-full sm:w-[360px] lg:w-[400px] border-l border-border bg-card flex flex-col max-sm:hidden">
           {/* Cart Header */}
           <div className="p-3 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-primary" />
-              <h2 className="font-bold">Bill</h2>
-              <Badge variant="secondary" className="text-xs">{cartItemCount} items</Badge>
+              <h2 className="font-bold text-sm">Bill</h2>
+              <Badge variant="secondary" className="text-[10px]">{cartItemCount} items</Badge>
             </div>
             {cart.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive text-xs">
+              <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive text-xs h-7">
                 <Trash2 className="h-3 w-3 mr-1" />Clear
               </Button>
             )}
           </div>
 
-          {/* Customer Info */}
+          {/* Customer Info with lookup */}
           <div className="p-3 border-b border-border space-y-2">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <User className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Customer name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="pl-8 h-9 text-sm"
-                />
-              </div>
-              <div className="relative flex-1">
                 <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Phone"
+                <Input placeholder="Phone number"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="pl-8 h-9 text-sm"
-                />
+                  onKeyDown={(e) => e.key === "Enter" && lookupCustomer()}
+                  className="pl-8 h-8 text-xs" />
               </div>
+              <Button variant="outline" size="sm" className="h-8 gap-1 text-xs px-2"
+                onClick={lookupCustomer} disabled={isLookingUp || !isOnline}>
+                <UserSearch className="h-3.5 w-3.5" />
+                {isLookingUp ? "..." : "Lookup"}
+              </Button>
+            </div>
+            <div className="relative">
+              <User className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Customer name"
+                value={customerName} onChange={(e) => setCustomerName(e.target.value)}
+                className="pl-8 h-8 text-xs" />
             </div>
           </div>
 
           {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <ShoppingCart className="h-12 w-12 mb-3 opacity-30" />
@@ -557,36 +611,47 @@ export default function POS() {
               cart.map((item) => {
                 const step = item.is_wholesale && item.case_qty ? item.case_qty : 1;
                 const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
+                const isEditing = editingQtyId === item.id;
                 return (
-                  <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/50">
+                  <div key={item.id} className="flex items-center gap-1.5 p-2 rounded-lg bg-muted/30 border border-border/50">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs truncate">{item.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="font-medium text-[11px] truncate">{item.name}</p>
+                      <p className="text-[9px] text-muted-foreground">
                         {item.is_wholesale && item.case_qty
-                          ? `₹${item.case_price?.toLocaleString()}/case • ${item.case_qty}pcs`
+                          ? `₹${item.case_price?.toLocaleString()}/cs • ${item.case_qty}pcs`
                           : `₹${item.price}/pc`}
+                        {" • MRP ₹" + item.mrp}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="outline" size="icon" className="h-7 w-7"
-                        onClick={() => updateCartQty(item.id, Math.max(0, item.quantity - step))}
-                      >
+                    <div className="flex items-center gap-0.5">
+                      <Button variant="outline" size="icon" className="h-6 w-6"
+                        onClick={() => updateCartQty(item.id, Math.max(0, item.quantity - step))}>
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <div className="w-10 text-center">
-                        <span className="text-sm font-bold">{item.quantity}</span>
-                        {cases !== null && <p className="text-[8px] text-muted-foreground">{cases}cs</p>}
-                      </div>
-                      <Button variant="outline" size="icon" className="h-7 w-7"
-                        onClick={() => updateCartQty(item.id, item.quantity + step)}
-                      >
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editQtyValue}
+                          onChange={(e) => setEditQtyValue(e.target.value)}
+                          onBlur={() => commitEditQty(item)}
+                          onKeyDown={(e) => e.key === "Enter" && commitEditQty(item)}
+                          className="w-12 h-6 text-center text-xs px-1"
+                        />
+                      ) : (
+                        <button onClick={() => startEditQty(item)}
+                          className="w-10 text-center hover:bg-muted rounded px-1 py-0.5">
+                          <span className="text-xs font-bold">{item.quantity}</span>
+                          {cases !== null && <p className="text-[7px] text-muted-foreground">{cases}cs</p>}
+                        </button>
+                      )}
+                      <Button variant="outline" size="icon" className="h-6 w-6"
+                        onClick={() => updateCartQty(item.id, item.quantity + step)}>
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
-                    <p className="font-bold text-sm w-16 text-right">₹{(item.price * item.quantity).toLocaleString()}</p>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                      onClick={() => removeFromCart(item.id)}
-                    >
+                    <p className="font-bold text-xs w-14 text-right">₹{(item.price * item.quantity).toLocaleString()}</p>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"
+                      onClick={() => removeFromCart(item.id)}>
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
@@ -595,48 +660,87 @@ export default function POS() {
             )}
           </div>
 
-          {/* Payment & Total */}
+          {/* Payment & Detailed Billing */}
           {cart.length > 0 && (
-            <div className="p-3 border-t border-border space-y-3">
+            <div className="p-3 border-t border-border space-y-2.5">
               {/* Payment Method */}
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 {[
                   { value: "cash" as const, icon: Banknote, label: "Cash" },
                   { value: "upi" as const, icon: Smartphone, label: "UPI" },
                   { value: "card" as const, icon: CreditCard, label: "Card" },
                 ].map((pm) => (
-                  <Button
-                    key={pm.value}
+                  <Button key={pm.value}
                     variant={paymentMethod === pm.value ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 gap-1 text-xs"
-                    onClick={() => setPaymentMethod(pm.value)}
-                  >
-                    <pm.icon className="h-3.5 w-3.5" />{pm.label}
+                    size="sm" className="flex-1 gap-1 text-[10px] h-7"
+                    onClick={() => setPaymentMethod(pm.value)}>
+                    <pm.icon className="h-3 w-3" />{pm.label}
                   </Button>
                 ))}
               </div>
 
-              {/* Totals */}
-              <div className="space-y-1 text-sm">
+              {/* Extra Charges */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                    <PackageCheck className="h-3 w-3" />Packing ₹
+                  </label>
+                  <Input type="number" min={0} value={packingCharges || ""}
+                    onChange={(e) => setPackingCharges(Number(e.target.value) || 0)}
+                    className="h-7 text-xs" placeholder="0" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                    <Truck className="h-3 w-3" />Delivery ₹
+                  </label>
+                  <Input type="number" min={0} value={deliveryCharges || ""}
+                    onChange={(e) => setDeliveryCharges(Number(e.target.value) || 0)}
+                    className="h-7 text-xs" placeholder="0" />
+                </div>
+              </div>
+
+              {/* Detailed Totals */}
+              <div className="space-y-0.5 text-xs">
                 <div className="flex justify-between text-muted-foreground">
                   <span>MRP Total</span>
                   <span className="line-through">₹{cartMrpTotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-accent font-medium">
-                  <span>Savings</span>
-                  <span>-₹{(cartMrpTotal - cartTotal).toLocaleString()}</span>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Sale Total</span>
+                  <span>₹{cartSaleTotal.toLocaleString()}</span>
                 </div>
-                <Separator />
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span className="text-primary">₹{cartTotal.toLocaleString()}</span>
+                <div className="flex justify-between text-accent font-medium">
+                  <span>You Save</span>
+                  <span>-₹{cartSavings.toLocaleString()}</span>
+                </div>
+                {packingCharges > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Packing</span>
+                    <span>+₹{packingCharges}</span>
+                  </div>
+                )}
+                {deliveryCharges > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Delivery</span>
+                    <span>+₹{deliveryCharges}</span>
+                  </div>
+                )}
+                {roundOff !== 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Round Off</span>
+                    <span>{roundOff > 0 ? "+" : ""}₹{roundOff.toFixed(2)}</span>
+                  </div>
+                )}
+                <Separator className="my-1" />
+                <div className="flex justify-between text-base font-bold">
+                  <span>Grand Total</span>
+                  <span className="text-primary">₹{grandTotal.toLocaleString()}</span>
                 </div>
               </div>
 
-              <Button variant="hero" className="w-full h-12 gap-2 text-base" onClick={generateBill}>
-                <Receipt className="h-5 w-5" />
-                Generate Bill — ₹{cartTotal.toLocaleString()}
+              <Button variant="hero" className="w-full h-11 gap-2 text-sm" onClick={generateBill}>
+                <Receipt className="h-4 w-4" />
+                Generate Bill — ₹{grandTotal.toLocaleString()}
               </Button>
             </div>
           )}
@@ -649,8 +753,8 @@ export default function POS() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">{cartItemCount} items</p>
-                <p className="text-lg font-bold text-primary">₹{cartTotal.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{cartItemCount} items • Save ₹{cartSavings.toLocaleString()}</p>
+                <p className="text-lg font-bold text-primary">₹{grandTotal.toLocaleString()}</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={clearCart}>

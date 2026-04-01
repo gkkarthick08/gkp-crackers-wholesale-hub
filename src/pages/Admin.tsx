@@ -14,7 +14,8 @@ import {
   X,
   ChevronRight,
   ArrowLeft,
-  FolderTree
+  FolderTree,
+  Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,7 @@ const sidebarItems = [
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Referrals", href: "/admin/referrals", icon: Gift },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
+  { name: "POS System", href: "/pos", icon: Store },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
