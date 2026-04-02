@@ -34,7 +34,6 @@ const passwordSchema = z.object({
 
 export default function Account() {
   const { user, profile, isLoading, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -58,12 +57,6 @@ export default function Account() {
     new: false,
     confirm: false,
   });
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, isLoading, navigate]);
 
   useEffect(() => {
     if (profile) {
