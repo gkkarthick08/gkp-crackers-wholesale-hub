@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import QuickOrder from "./pages/QuickOrder";
 import Products from "./pages/Products";
