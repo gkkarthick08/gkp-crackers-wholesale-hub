@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { User, Phone, Mail, MapPin, Building2, FileText, Save, Loader2, Shield, Lock, Eye, EyeOff, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -34,7 +34,6 @@ const passwordSchema = z.object({
 
 export default function Account() {
   const { user, profile, isLoading, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -58,12 +57,6 @@ export default function Account() {
     new: false,
     confirm: false,
   });
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, isLoading, navigate]);
 
   useEffect(() => {
     if (profile) {

@@ -70,12 +70,6 @@ export default function Orders() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
     if (user) {
       fetchOrders();
     }
