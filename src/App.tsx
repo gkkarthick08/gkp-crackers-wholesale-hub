@@ -44,6 +44,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/quick-order" element={<QuickOrder />} />
@@ -53,9 +54,9 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/cart" element={<Cart />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/account" element={<Account />} />
+              <Route path="/wallet" element={<AuthGuard><Wallet /></AuthGuard>} />
+              <Route path="/orders" element={<AuthGuard><Orders /></AuthGuard>} />
+              <Route path="/account" element={<AuthGuard><Account /></AuthGuard>} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/pos" element={<POS />} />
