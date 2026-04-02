@@ -59,6 +59,7 @@ const statusColors: Record<string, string> = {
 
 export default function Orders() {
   const { user, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
