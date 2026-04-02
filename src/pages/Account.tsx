@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { User, Phone, Mail, MapPin, Building2, FileText, Save, Loader2, Shield, Lock, Eye, EyeOff, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
