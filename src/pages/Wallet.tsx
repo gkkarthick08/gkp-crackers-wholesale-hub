@@ -7,6 +7,7 @@ import { ReferralCard } from "@/components/referral/ReferralCard";
 import { ReferralHistory } from "@/components/referral/ReferralHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Wallet as WalletIcon, Users, Sparkles } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Wallet() {
   const { user, profile } = useAuth();
