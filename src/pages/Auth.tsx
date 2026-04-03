@@ -29,6 +29,7 @@ const signupSchema = z.object({
 });
 
 export default function Auth() {
+  usePageMeta({ title: "Login / Sign Up — GKP Crackers", description: "Sign in or create an account at GKP Crackers." });
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "retail";
   const refCode = searchParams.get("ref") || "";

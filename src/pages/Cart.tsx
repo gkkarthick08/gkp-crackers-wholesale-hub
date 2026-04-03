@@ -23,6 +23,7 @@ interface SiteSettings {
 }
 
 export default function Cart() {
+  usePageMeta({ title: "Cart — GKP Crackers", description: "Review your cart and place your order." });
   const { items, updateQuantity, removeItem, clearCart, totalAmount, totalItems, totalMrp, totalSavings } = useCart();
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();

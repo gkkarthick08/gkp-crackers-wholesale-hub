@@ -59,6 +59,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Orders() {
+  usePageMeta({ title: "My Orders — GKP Crackers", description: "Track your orders and order history." });
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);

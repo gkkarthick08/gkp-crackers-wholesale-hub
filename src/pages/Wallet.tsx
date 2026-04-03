@@ -10,6 +10,7 @@ import { Wallet as WalletIcon, Users, Sparkles } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Wallet() {
+  usePageMeta({ title: "Wallet & Referrals — GKP Crackers", description: "Manage your wallet balance and referral rewards." });
   const { user, profile } = useAuth();
 
   return (

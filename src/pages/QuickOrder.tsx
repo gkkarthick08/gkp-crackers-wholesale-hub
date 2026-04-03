@@ -40,6 +40,7 @@ interface Category {
 }
 
 export default function QuickOrder() {
+  usePageMeta({ title: "Quick Order — GKP Crackers", description: "Quickly order your favorite crackers with our streamlined ordering system." });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState<NormalizedProduct[]>([]);
