@@ -88,24 +88,39 @@ export default function Contact() {
 
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Save to database
+      const { error } = await supabase.from("contact_messages" as any).insert([{
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        message: formData.message,
+      }]);
 
-    // Build WhatsApp message
-    const message = `*New Contact Form Submission*\n\n👤 Name: ${formData.name}\n📧 Email: ${formData.email}\n📞 Phone: ${formData.phone}\n\n💬 Message:\n${formData.message}`;
-    const encodedMessage = encodeURIComponent(message);
-    
-    // Open WhatsApp with the message
-    window.open(`https://wa.me/918610153961?text=${encodedMessage}`, "_blank");
+      if (error) throw error;
 
-    toast({
-      title: "Message Sent!",
-      description: "We've received your message and will get back to you soon.",
-    });
+      // Also open WhatsApp
+      const message = `*New Contact Form Submission*\n\n👤 Name: ${formData.name}\n📧 Email: ${formData.email}\n📞 Phone: ${formData.phone}\n\n💬 Message:\n${formData.message}`;
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/918610153961?text=${encodedMessage}`, "_blank");
 
-    // Reset form
-    setFormData({ name: "", email: "", phone: "", message: "" });
-    setIsSubmitting(false);
+      toast({
+        title: "Message Sent!",
+        description: "We've received your message and will get back to you soon.",
+      });
+
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (err) {
+      console.error("Contact form error:", err);
+      // Fallback to WhatsApp only
+      const message = `*New Contact Form Submission*\n\n👤 Name: ${formData.name}\n📧 Email: ${formData.email}\n📞 Phone: ${formData.phone}\n\n💬 Message:\n${formData.message}`;
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/918610153961?text=${encodedMessage}`, "_blank");
+      toast({ title: "Message sent via WhatsApp", description: "We'll get back to you soon." });
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateField = (field: string, value: string) => {
