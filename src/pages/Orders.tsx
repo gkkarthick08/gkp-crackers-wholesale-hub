@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Package, ChevronDown, ChevronUp, Loader2, ShoppingBag, XCircle } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -58,6 +59,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Orders() {
+  usePageMeta({ title: "My Orders — GKP Crackers", description: "Track your orders and order history." });
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);

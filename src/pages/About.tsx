@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const features = [
   {
@@ -37,6 +38,7 @@ const stats = [
 ];
 
 export default function About() {
+  usePageMeta({ title: "About Us — GKP Crackers", description: "Learn about GKP Crackers Sivakasi. 25+ years of quality crackers at best prices." });
   return (
     <div className="min-h-screen bg-background">
       <Header />

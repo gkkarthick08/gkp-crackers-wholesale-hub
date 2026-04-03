@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { validateCustomerDetails } from "@/lib/validations";
 
 interface SiteSettings {
@@ -22,6 +23,7 @@ interface SiteSettings {
 }
 
 export default function Cart() {
+  usePageMeta({ title: "Cart — GKP Crackers", description: "Review your cart and place your order." });
   const { items, updateQuantity, removeItem, clearCart, totalAmount, totalItems, totalMrp, totalSavings } = useCart();
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();

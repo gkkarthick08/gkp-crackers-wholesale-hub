@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface NormalizedProduct {
   id: string;
@@ -39,6 +40,7 @@ interface Category {
 }
 
 export default function QuickOrder() {
+  usePageMeta({ title: "Quick Order — GKP Crackers", description: "Quickly order your favorite crackers with our streamlined ordering system." });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState<NormalizedProduct[]>([]);
