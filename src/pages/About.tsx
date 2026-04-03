@@ -38,6 +38,7 @@ const stats = [
 ];
 
 export default function About() {
+  usePageMeta({ title: "About Us — GKP Crackers", description: "Learn about GKP Crackers Sivakasi. 25+ years of quality crackers at best prices." });
   return (
     <div className="min-h-screen bg-background">
       <Header />
