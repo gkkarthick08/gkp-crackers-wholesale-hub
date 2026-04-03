@@ -43,6 +43,7 @@ const contactInfo = [
 ];
 
 export default function Contact() {
+  usePageMeta({ title: "Contact Us — GKP Crackers", description: "Get in touch with GKP Crackers Sivakasi. Call, WhatsApp, or send us a message." });
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

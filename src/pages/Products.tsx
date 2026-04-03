@@ -40,6 +40,7 @@ interface Category {
 }
 
 export default function Products() {
+  usePageMeta({ title: "Products — GKP Crackers", description: "Browse our premium collection of Diwali crackers at best wholesale and retail prices." });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState<NormalizedProduct[]>([]);

@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const features = [
   {
