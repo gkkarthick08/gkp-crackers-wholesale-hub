@@ -367,6 +367,8 @@ export default function POS() {
                     setPaymentMethod={setPaymentMethod}
                     packingCharges={packingCharges}
                     setPackingCharges={setPackingCharges}
+                    packingPercent={packingPercent}
+                    setPackingPercent={setPackingPercent}
                     deliveryCharges={deliveryCharges}
                     setDeliveryCharges={setDeliveryCharges}
                     isLookingUp={isLookingUp}
