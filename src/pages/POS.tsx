@@ -58,6 +58,7 @@ export default function POS() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showReceipt, setShowReceipt] = useState<PosOrder | null>(null);
   const [packingCharges, setPackingCharges] = useState(0);
+  const [packingPercent, setPackingPercent] = useState(0);
   const [deliveryCharges, setDeliveryCharges] = useState(0);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
