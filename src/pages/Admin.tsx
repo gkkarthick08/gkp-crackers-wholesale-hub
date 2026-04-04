@@ -182,6 +182,8 @@ export default function Admin() {
               <Route path="referrals" element={<AdminReferrals />} />
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="pos-settings" element={<AdminPOSSettings />} />
+              <Route path="seo" element={<AdminSEO />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={
                 <div className="text-center py-20">
