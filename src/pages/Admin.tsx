@@ -15,7 +15,9 @@ import {
   ChevronRight,
   ArrowLeft,
   FolderTree,
-  Store
+  Store,
+  Search,
+  Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +36,8 @@ import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminWholesaleProducts from "@/components/admin/AdminWholesaleProducts";
+import AdminPOSSettings from "@/components/admin/AdminPOSSettings";
+import AdminSEO from "@/components/admin/AdminSEO";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -48,6 +52,8 @@ const sidebarItems = [
   { name: "Referrals", href: "/admin/referrals", icon: Gift },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "POS System", href: "/pos", icon: Store },
+  { name: "POS Settings", href: "/admin/pos-settings", icon: Receipt },
+  { name: "SEO", href: "/admin/seo", icon: Search },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
@@ -176,6 +182,8 @@ export default function Admin() {
               <Route path="referrals" element={<AdminReferrals />} />
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="pos-settings" element={<AdminPOSSettings />} />
+              <Route path="seo" element={<AdminSEO />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={
                 <div className="text-center py-20">

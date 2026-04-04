@@ -58,6 +58,7 @@ export default function POS() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showReceipt, setShowReceipt] = useState<PosOrder | null>(null);
   const [packingCharges, setPackingCharges] = useState(0);
+  const [packingPercent, setPackingPercent] = useState(0);
   const [deliveryCharges, setDeliveryCharges] = useState(0);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -211,9 +212,12 @@ export default function POS() {
     if (itemsErr) throw itemsErr;
   };
 
+  const cartMrpTotal = useMemo(() => cart.reduce((s, i) => s + i.mrp * i.quantity, 0), [cart]);
+
   const generateBill = async () => {
     if (cart.length === 0) { toast({ title: "Cart is empty", variant: "destructive" }); return; }
     const orderId = crypto.randomUUID();
+    const savings = cartMrpTotal - cartSaleTotal;
     const order: PosOrder = {
       id: orderId,
       created_at: new Date().toISOString(),
@@ -226,9 +230,14 @@ export default function POS() {
         quantity: i.quantity,
         unit_price: i.price,
         total_price: i.price * i.quantity,
+        mrp: i.mrp,
         is_wholesale: i.is_wholesale,
       })),
       total_amount: grandTotal,
+      mrp_total: cartMrpTotal,
+      savings: savings,
+      packing_charges: packingCharges,
+      delivery_charges: deliveryCharges,
       payment_method: paymentMethod,
       billing_mode: billingMode,
       synced: false,
@@ -245,6 +254,7 @@ export default function POS() {
     setCustomerAddress("");
     setPackingCharges(0);
     setDeliveryCharges(0);
+    setPackingPercent(0);
     setMobileCartOpen(false);
     toast({ title: "Bill generated!", description: `Order total: ₹${grandTotal.toLocaleString()}` });
   };
@@ -272,7 +282,13 @@ export default function POS() {
   if (!user || !isAdmin) return <Navigate to="/" replace />;
 
   // Receipt view
-  if (showReceipt) return <POSReceipt order={showReceipt} onNewBill={() => setShowReceipt(null)} />;
+  if (showReceipt) return (
+    <POSReceipt
+      order={showReceipt}
+      onNewBill={() => setShowReceipt(null)}
+      onUpdateOrder={(updated) => setShowReceipt(updated)}
+    />
+  );
 
   // Main POS view
   return (
@@ -316,6 +332,8 @@ export default function POS() {
           setPaymentMethod={setPaymentMethod}
           packingCharges={packingCharges}
           setPackingCharges={setPackingCharges}
+          packingPercent={packingPercent}
+          setPackingPercent={setPackingPercent}
           deliveryCharges={deliveryCharges}
           setDeliveryCharges={setDeliveryCharges}
           isLookingUp={isLookingUp}
@@ -355,6 +373,8 @@ export default function POS() {
                     setPaymentMethod={setPaymentMethod}
                     packingCharges={packingCharges}
                     setPackingCharges={setPackingCharges}
+                    packingPercent={packingPercent}
+                    setPackingPercent={setPackingPercent}
                     deliveryCharges={deliveryCharges}
                     setDeliveryCharges={setDeliveryCharges}
                     isLookingUp={isLookingUp}
