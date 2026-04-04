@@ -155,7 +155,7 @@ export default function POSReceipt({ order, onNewBill, onUpdateOrder }: Props) {
                 <span>Sale Total</span>
                 <span>₹{saleTotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between font-medium text-green-600">
+              <div className="flex justify-between font-medium text-primary">
                 <span>🎉 You Save</span>
                 <span>₹{savings.toLocaleString()}</span>
               </div>

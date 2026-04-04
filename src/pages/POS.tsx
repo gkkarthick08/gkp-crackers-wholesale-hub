@@ -282,7 +282,13 @@ export default function POS() {
   if (!user || !isAdmin) return <Navigate to="/" replace />;
 
   // Receipt view
-  if (showReceipt) return <POSReceipt order={showReceipt} onNewBill={() => setShowReceipt(null)} />;
+  if (showReceipt) return (
+    <POSReceipt
+      order={showReceipt}
+      onNewBill={() => setShowReceipt(null)}
+      onUpdateOrder={(updated) => setShowReceipt(updated)}
+    />
+  );
 
   // Main POS view
   return (
