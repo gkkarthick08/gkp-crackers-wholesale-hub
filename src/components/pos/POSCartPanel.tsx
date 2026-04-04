@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShoppingCart, Trash2, Plus, Minus, X, Receipt,
   Phone, User, UserSearch, Banknote, Smartphone, CreditCard,
-  PackageCheck, Truck
+  PackageCheck, Truck, Percent
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,8 @@ interface Props {
   setPaymentMethod: (v: "cash" | "upi" | "card") => void;
   packingCharges: number;
   setPackingCharges: (v: number) => void;
+  packingPercent: number;
+  setPackingPercent: (v: number) => void;
   deliveryCharges: number;
   setDeliveryCharges: (v: number) => void;
   isLookingUp: boolean;
@@ -54,7 +56,8 @@ export default function POSCartPanel({
   cart, updateCartQty, removeFromCart, clearCart,
   customerName, setCustomerName, customerPhone, setCustomerPhone,
   paymentMethod, setPaymentMethod,
-  packingCharges, setPackingCharges, deliveryCharges, setDeliveryCharges,
+  packingCharges, setPackingCharges, packingPercent, setPackingPercent,
+  deliveryCharges, setDeliveryCharges,
   isLookingUp, isOnline, onLookup, onGenerateBill,
   className = "",
 }: Props) {
@@ -65,9 +68,25 @@ export default function POSCartPanel({
   const cartMrpTotal = cart.reduce((s, i) => s + i.mrp * i.quantity, 0);
   const cartSaleTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const cartSavings = cartMrpTotal - cartSaleTotal;
+
+  // Auto-calculate packing charges when percent or sale total changes
+  useEffect(() => {
+    if (packingPercent > 0) {
+      const calculated = Math.round((cartSaleTotal * packingPercent) / 100);
+      setPackingCharges(calculated);
+    }
+  }, [packingPercent, cartSaleTotal, setPackingCharges]);
+
   const subtotal = cartSaleTotal + packingCharges + deliveryCharges;
   const roundOff = Math.round(subtotal) - subtotal;
   const grandTotal = Math.round(subtotal);
+
+  const handlePackingPercentChange = (val: number) => {
+    setPackingPercent(val);
+    if (val <= 0) {
+      setPackingCharges(0);
+    }
+  };
 
   const startEditQty = (item: PosCartItem) => {
     setEditingQtyId(item.id);
@@ -206,11 +225,20 @@ export default function POSCartPanel({
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                <PackageCheck className="h-3 w-3" />Packing ₹
+                <PackageCheck className="h-3 w-3" />Packing %
               </label>
-              <Input type="number" min={0} value={packingCharges || ""}
-                onChange={(e) => setPackingCharges(Number(e.target.value) || 0)}
-                className="h-7 text-xs" placeholder="0" />
+              <div className="flex gap-1">
+                <div className="relative flex-1">
+                  <Input type="number" min={0} max={100} step={0.5}
+                    value={packingPercent || ""}
+                    onChange={(e) => handlePackingPercentChange(Number(e.target.value) || 0)}
+                    className="h-7 text-xs pr-6" placeholder="0" />
+                  <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                </div>
+                <div className="bg-muted rounded px-2 flex items-center min-w-[60px] justify-center">
+                  <span className="text-xs font-medium">₹{packingCharges}</span>
+                </div>
+              </div>
             </div>
             <div className="flex-1">
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
@@ -237,7 +265,7 @@ export default function POSCartPanel({
             </div>
             {packingCharges > 0 && (
               <div className="flex justify-between text-muted-foreground">
-                <span>Packing</span><span>+₹{packingCharges}</span>
+                <span>Packing ({packingPercent}%)</span><span>+₹{packingCharges}</span>
               </div>
             )}
             {deliveryCharges > 0 && (
