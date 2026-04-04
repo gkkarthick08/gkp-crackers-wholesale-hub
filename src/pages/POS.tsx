@@ -211,9 +211,12 @@ export default function POS() {
     if (itemsErr) throw itemsErr;
   };
 
+  const cartMrpTotal = useMemo(() => cart.reduce((s, i) => s + i.mrp * i.quantity, 0), [cart]);
+
   const generateBill = async () => {
     if (cart.length === 0) { toast({ title: "Cart is empty", variant: "destructive" }); return; }
     const orderId = crypto.randomUUID();
+    const savings = cartMrpTotal - cartSaleTotal;
     const order: PosOrder = {
       id: orderId,
       created_at: new Date().toISOString(),
@@ -226,9 +229,14 @@ export default function POS() {
         quantity: i.quantity,
         unit_price: i.price,
         total_price: i.price * i.quantity,
+        mrp: i.mrp,
         is_wholesale: i.is_wholesale,
       })),
       total_amount: grandTotal,
+      mrp_total: cartMrpTotal,
+      savings: savings,
+      packing_charges: packingCharges,
+      delivery_charges: deliveryCharges,
       payment_method: paymentMethod,
       billing_mode: billingMode,
       synced: false,
@@ -245,6 +253,7 @@ export default function POS() {
     setCustomerAddress("");
     setPackingCharges(0);
     setDeliveryCharges(0);
+    setPackingPercent(0);
     setMobileCartOpen(false);
     toast({ title: "Bill generated!", description: `Order total: ₹${grandTotal.toLocaleString()}` });
   };
