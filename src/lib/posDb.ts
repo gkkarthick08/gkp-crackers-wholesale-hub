@@ -13,6 +13,7 @@ export interface PosOrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  mrp: number;
   is_wholesale: boolean;
 }
 
@@ -23,6 +24,10 @@ export interface PosOrder {
   customer_phone: string;
   items: PosOrderItem[];
   total_amount: number;
+  mrp_total: number;
+  savings: number;
+  packing_charges: number;
+  delivery_charges: number;
   payment_method: "cash" | "upi" | "card";
   billing_mode: "retail" | "wholesale";
   synced: boolean;
