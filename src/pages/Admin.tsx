@@ -34,6 +34,9 @@ import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminWholesaleProducts from "@/components/admin/AdminWholesaleProducts";
+import AdminPOSSettings from "@/components/admin/AdminPOSSettings";
+import AdminSEO from "@/components/admin/AdminSEO";
+import AdminWholesaleProducts from "@/components/admin/AdminWholesaleProducts";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
