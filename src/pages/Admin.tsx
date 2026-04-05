@@ -39,6 +39,8 @@ import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminWholesaleProducts from "@/components/admin/AdminWholesaleProducts";
 import AdminPOSSettings from "@/components/admin/AdminPOSSettings";
+import AdminPOSHistory from "@/components/admin/AdminPOSHistory";
+import AdminStaff from "@/components/admin/AdminStaff";
 import AdminSEO from "@/components/admin/AdminSEO";
 
 const sidebarItems = [
