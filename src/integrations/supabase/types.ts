@@ -262,6 +262,119 @@ export type Database = {
           },
         ]
       }
+      pos_order_items: {
+        Row: {
+          id: string
+          is_wholesale: boolean
+          mrp: number
+          pos_order_id: string
+          product_code: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          is_wholesale?: boolean
+          mrp?: number
+          pos_order_id: string
+          product_code: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          id?: string
+          is_wholesale?: boolean
+          mrp?: number
+          pos_order_id?: string
+          product_code?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_order_items_pos_order_id_fkey"
+            columns: ["pos_order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_orders: {
+        Row: {
+          amount_paid: number
+          balance_due: number
+          bill_number: string | null
+          billing_mode: string
+          created_at: string
+          created_by: string | null
+          customer_address: string | null
+          customer_name: string
+          customer_phone: string | null
+          delivery_charges: number
+          id: string
+          mrp_total: number
+          notes: string | null
+          packing_charges: number
+          payment_method: string
+          payment_status: string
+          savings: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          balance_due?: number
+          bill_number?: string | null
+          billing_mode?: string
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          delivery_charges?: number
+          id?: string
+          mrp_total?: number
+          notes?: string | null
+          packing_charges?: number
+          payment_method?: string
+          payment_status?: string
+          savings?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          balance_due?: number
+          bill_number?: string | null
+          billing_mode?: string
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          delivery_charges?: number
+          id?: string
+          mrp_total?: number
+          notes?: string | null
+          packing_charges?: number
+          payment_method?: string
+          payment_status?: string
+          savings?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand_id: string | null
