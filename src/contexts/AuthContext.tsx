@@ -205,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsStaff(false);
   };
 
   /* =======================
@@ -219,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         isLoading,
         isAdmin,
+        isStaff,
 
         // ✅ EXPOSED FLAGS
         isVerifiedDealer,
