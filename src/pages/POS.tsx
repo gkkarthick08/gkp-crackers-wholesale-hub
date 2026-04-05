@@ -40,7 +40,7 @@ interface PosCartItem extends PosProduct {
 export default function POS() {
   usePageMeta({ title: "POS System — GKP Crackers", description: "Point of Sale billing system" });
   const { toast } = useToast();
-  const { isAdmin, isLoading: authLoading, user } = useAuth();
+  const { isAdmin, isStaff, isLoading: authLoading, user } = useAuth();
 
   const [billingMode, setBillingMode] = useState<"retail" | "wholesale">("retail");
   const [products, setProducts] = useState<PosProduct[]>([]);
