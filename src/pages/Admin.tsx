@@ -17,7 +17,9 @@ import {
   FolderTree,
   Store,
   Search,
-  Receipt
+  Receipt,
+  History,
+  Users2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
