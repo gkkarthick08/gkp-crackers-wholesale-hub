@@ -94,16 +94,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAdminRole = async () => {
     try {
       const { data, error } = await supabase.rpc("is_admin");
-
       if (error) {
         console.error("Error checking admin role:", error);
         setIsAdmin(false);
-        return;
+      } else {
+        setIsAdmin(!!data);
       }
-
-      setIsAdmin(!!data);
     } catch {
       setIsAdmin(false);
+    }
+  };
+
+  const checkStaffRole = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("role", "staff" as any)
+        .maybeSingle();
+      setIsStaff(!!data);
+    } catch {
+      setIsStaff(false);
     }
   };
 
