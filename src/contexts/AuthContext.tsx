@@ -140,10 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => {
           fetchProfile(session.user.id);
           checkAdminRole();
+          checkStaffRole(session.user.id);
         }, 0);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsStaff(false);
       }
 
       setIsLoading(false);
