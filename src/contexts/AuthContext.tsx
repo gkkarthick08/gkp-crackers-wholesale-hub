@@ -158,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         checkAdminRole();
+        checkStaffRole(session.user.id);
       }
 
       setIsLoading(false);
