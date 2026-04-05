@@ -279,7 +279,7 @@ export default function POS() {
       <RefreshCw className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
+  if (!user || (!isAdmin && !isStaff)) return <Navigate to="/" replace />;
 
   // Receipt view
   if (showReceipt) return (
