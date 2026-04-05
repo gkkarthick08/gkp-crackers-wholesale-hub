@@ -189,6 +189,8 @@ export default function Admin() {
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="pos-settings" element={<AdminPOSSettings />} />
+              <Route path="pos-history" element={<AdminPOSHistory />} />
+              <Route path="staff" element={<AdminStaff />} />
               <Route path="seo" element={<AdminSEO />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={
