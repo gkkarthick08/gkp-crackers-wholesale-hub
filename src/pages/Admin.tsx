@@ -56,7 +56,9 @@ const sidebarItems = [
   { name: "Referrals", href: "/admin/referrals", icon: Gift },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "POS System", href: "/pos", icon: Store },
+  { name: "POS History", href: "/admin/pos-history", icon: History },
   { name: "POS Settings", href: "/admin/pos-settings", icon: Receipt },
+  { name: "Staff", href: "/admin/staff", icon: Users2 },
   { name: "SEO", href: "/admin/seo", icon: Search },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
