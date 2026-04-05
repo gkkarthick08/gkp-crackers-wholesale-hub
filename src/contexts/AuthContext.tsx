@@ -26,6 +26,7 @@ interface AuthContextType {
   profile: Profile | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isStaff: boolean;
 
   // ✅ NEW FLAGS
   isVerifiedDealer: boolean;
