@@ -40,7 +40,7 @@ interface PosCartItem extends PosProduct {
 export default function POS() {
   usePageMeta({ title: "POS System — GKP Crackers", description: "Point of Sale billing system" });
   const { toast } = useToast();
-  const { isAdmin, isLoading: authLoading, user } = useAuth();
+  const { isAdmin, isStaff, isLoading: authLoading, user } = useAuth();
 
   const [billingMode, setBillingMode] = useState<"retail" | "wholesale">("retail");
   const [products, setProducts] = useState<PosProduct[]>([]);
@@ -183,6 +183,42 @@ export default function POS() {
   const cartItemCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
 
   const syncSingleOrder = async (order: PosOrder) => {
+    // Save to pos_orders table
+    const { data: posOrder, error: posErr } = await supabase.from("pos_orders").insert([{
+      customer_name: order.customer_name,
+      customer_phone: order.customer_phone || null,
+      customer_address: customerAddress || null,
+      billing_mode: order.billing_mode,
+      payment_method: order.payment_method,
+      total_amount: order.total_amount,
+      mrp_total: order.mrp_total,
+      savings: order.savings,
+      packing_charges: order.packing_charges,
+      delivery_charges: order.delivery_charges,
+      payment_status: "paid",
+      amount_paid: order.total_amount,
+      balance_due: 0,
+      created_by: user?.id || null,
+    }]).select().single();
+    if (posErr) throw posErr;
+
+    // Save pos_order_items
+    if (posOrder) {
+      const posItems = order.items.map((i) => ({
+        pos_order_id: posOrder.id,
+        product_id: i.is_wholesale ? null : i.product_id,
+        product_code: i.product_code,
+        product_name: i.product_name,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+        total_price: i.total_price,
+        mrp: i.mrp,
+        is_wholesale: i.is_wholesale,
+      }));
+      await supabase.from("pos_order_items").insert(posItems);
+    }
+
+    // Also sync to orders table for legacy compatibility
     const { data: orderNumber } = await supabase.rpc("generate_order_number");
     if (!orderNumber) throw new Error("Failed to generate order number");
     const { data: dbOrder, error: orderErr } = await supabase.from("orders").insert([{
@@ -279,7 +315,7 @@ export default function POS() {
       <RefreshCw className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
+  if (!user || (!isAdmin && !isStaff)) return <Navigate to="/" replace />;
 
   // Receipt view
   if (showReceipt) return (

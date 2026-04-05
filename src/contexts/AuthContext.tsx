@@ -26,6 +26,7 @@ interface AuthContextType {
   profile: Profile | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isStaff: boolean;
 
   // ✅ NEW FLAGS
   isVerifiedDealer: boolean;
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
 
   // ✅ NEW COMPUTED FLAGS
   const isVerifiedDealer =
@@ -92,16 +94,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAdminRole = async () => {
     try {
       const { data, error } = await supabase.rpc("is_admin");
-
       if (error) {
         console.error("Error checking admin role:", error);
         setIsAdmin(false);
-        return;
+      } else {
+        setIsAdmin(!!data);
       }
-
-      setIsAdmin(!!data);
     } catch {
       setIsAdmin(false);
+    }
+  };
+
+  const checkStaffRole = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("role", "staff" as any)
+        .maybeSingle();
+      setIsStaff(!!data);
+    } catch {
+      setIsStaff(false);
     }
   };
 
@@ -126,10 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => {
           fetchProfile(session.user.id);
           checkAdminRole();
+          checkStaffRole(session.user.id);
         }, 0);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsStaff(false);
       }
 
       setIsLoading(false);
@@ -142,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         checkAdminRole();
+        checkStaffRole(session.user.id);
       }
 
       setIsLoading(false);
@@ -188,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsStaff(false);
   };
 
   /* =======================
@@ -202,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         isLoading,
         isAdmin,
+        isStaff,
 
         // ✅ EXPOSED FLAGS
         isVerifiedDealer,

@@ -17,7 +17,9 @@ import {
   FolderTree,
   Store,
   Search,
-  Receipt
+  Receipt,
+  History,
+  Users2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +39,8 @@ import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminWholesaleProducts from "@/components/admin/AdminWholesaleProducts";
 import AdminPOSSettings from "@/components/admin/AdminPOSSettings";
+import AdminPOSHistory from "@/components/admin/AdminPOSHistory";
+import AdminStaff from "@/components/admin/AdminStaff";
 import AdminSEO from "@/components/admin/AdminSEO";
 
 const sidebarItems = [
@@ -52,7 +56,9 @@ const sidebarItems = [
   { name: "Referrals", href: "/admin/referrals", icon: Gift },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "POS System", href: "/pos", icon: Store },
+  { name: "POS History", href: "/admin/pos-history", icon: History },
   { name: "POS Settings", href: "/admin/pos-settings", icon: Receipt },
+  { name: "Staff", href: "/admin/staff", icon: Users2 },
   { name: "SEO", href: "/admin/seo", icon: Search },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
@@ -183,6 +189,8 @@ export default function Admin() {
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="pos-settings" element={<AdminPOSSettings />} />
+              <Route path="pos-history" element={<AdminPOSHistory />} />
+              <Route path="staff" element={<AdminStaff />} />
               <Route path="seo" element={<AdminSEO />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={
