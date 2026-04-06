@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -19,10 +19,13 @@ import {
   Search,
   Receipt,
   History,
-  Users2
+  Users2,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 // Admin components
@@ -42,6 +45,7 @@ import AdminPOSSettings from "@/components/admin/AdminPOSSettings";
 import AdminPOSHistory from "@/components/admin/AdminPOSHistory";
 import AdminStaff from "@/components/admin/AdminStaff";
 import AdminSEO from "@/components/admin/AdminSEO";
+import AdminContactMessages from "@/components/admin/AdminContactMessages";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -51,6 +55,7 @@ const sidebarItems = [
   { name: "Brands", href: "/admin/brands", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Customers", href: "/admin/customers", icon: Users },
+  { name: "Contact Messages", href: "/admin/contact-messages", icon: MessageSquare },
   { name: "Wallet", href: "/admin/wallet", icon: Wallet },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Referrals", href: "/admin/referrals", icon: Gift },
@@ -65,8 +70,20 @@ const sidebarItems = [
 
 export default function Admin() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const location = useLocation();
   const { isAdmin, isLoading, user } = useAuth();
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from("contact_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("is_read", false);
+      setUnreadMessages(count || 0);
+    };
+    fetchUnread();
+  }, [location.pathname]);
 
   // Show loading while checking auth
   if (isLoading) {
@@ -140,6 +157,7 @@ export default function Admin() {
               {sidebarItems.map((item) => {
                 const isActive = location.pathname === item.href || 
                   (item.href !== "/admin" && location.pathname.startsWith(item.href));
+                const showBadge = item.href === "/admin/contact-messages" && unreadMessages > 0;
                 return (
                   <Link
                     key={item.name}
@@ -155,7 +173,12 @@ export default function Admin() {
                   >
                     <item.icon className="h-5 w-5" />
                     <span className="font-medium">{item.name}</span>
-                    {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
+                    {showBadge && (
+                      <Badge className="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0">
+                        {unreadMessages}
+                      </Badge>
+                    )}
+                    {isActive && !showBadge && <ChevronRight className="h-4 w-4 ml-auto" />}
                   </Link>
                 );
               })}
@@ -192,6 +215,7 @@ export default function Admin() {
               <Route path="pos-history" element={<AdminPOSHistory />} />
               <Route path="staff" element={<AdminStaff />} />
               <Route path="seo" element={<AdminSEO />} />
+              <Route path="contact-messages" element={<AdminContactMessages />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={
                 <div className="text-center py-20">
