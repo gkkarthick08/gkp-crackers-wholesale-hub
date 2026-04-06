@@ -44,6 +44,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
+  // Clear cart on sign-out event (avoids circular dependency with AuthContext)
+  useEffect(() => {
+    const handler = () => setItems([]);
+    window.addEventListener("gkp-signout", handler);
+    return () => window.removeEventListener("gkp-signout", handler);
+  }, []);
+
   const addItem = (item: Omit<CartItem, "quantity">, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);

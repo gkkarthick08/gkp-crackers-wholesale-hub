@@ -159,11 +159,8 @@ export default function QuickOrder() {
     }
   };
 
-  const totalItemsCount = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
-  const totalAmount = products.reduce((sum, product) => {
-    const qty = quantities[product.id] || 0;
-    return sum + (qty * product.price);
-  }, 0);
+  const totalItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const addToEstimate = () => {
     if (totalItemsCount === 0) {

@@ -156,6 +156,9 @@ export default function Orders() {
 
       if (error) throw error;
 
+      // Restore stock on cancellation
+      await supabase.rpc("restore_stock", { p_order_id: orderToCancel.id });
+
       toast({
         title: "Order cancelled",
         description: `Order ${orderToCancel.order_number} has been cancelled`,
