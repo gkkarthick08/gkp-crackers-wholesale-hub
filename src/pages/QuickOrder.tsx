@@ -386,18 +386,24 @@ export default function QuickOrder() {
               const qty = quantities[product.id] || 0;
               const amount = qty * product.price;
               const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+              const isOutOfStock = product.stock !== null && product.stock === 0;
               return (
-                <Card key={product.id} className={`overflow-hidden transition-all ${qty > 0 ? "border-primary/50 bg-primary/5" : ""}`}>
+                <Card key={product.id} className={`overflow-hidden transition-all ${qty > 0 ? "border-primary/50 bg-primary/5" : ""} ${isOutOfStock ? "opacity-60" : ""}`}>
                   <CardContent className="p-4">
                     <div className="flex gap-3">
                       <div
-                        className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden cursor-pointer"
+                        className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden cursor-pointer relative"
                         onClick={() => openProductDetail(product)}
                       >
                         {product.image_url ? (
                           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-2xl">{getProductEmoji(product.category?.name)}</span>
+                        )}
+                        {isOutOfStock && (
+                          <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
+                            <span className="text-[8px] font-bold text-destructive-foreground bg-destructive px-1 rounded">OOS</span>
+                          </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -429,23 +435,27 @@ export default function QuickOrder() {
                         ) : null}
 
                         {/* Quantity Controls */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => updateQuantity(product.id, -1)}>
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <Input type="number" min="0" step={product.is_wholesale ? (product.case_qty || 1) : 1} value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-9 text-center font-medium" />
-                            <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => updateQuantity(product.id, 1)}>
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                        {isOutOfStock ? (
+                          <p className="text-xs font-medium text-destructive">Out of Stock</p>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => updateQuantity(product.id, -1)}>
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Input type="number" min="0" step={product.is_wholesale ? (product.case_qty || 1) : 1} value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-9 text-center font-medium" />
+                              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => updateQuantity(product.id, 1)}>
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="text-right">
+                              {amount > 0 && <p className="font-bold text-primary">₹{amount.toLocaleString()}</p>}
+                              {product.is_wholesale && qty > 0 && product.case_qty ? (
+                                <p className="text-[10px] text-muted-foreground">{Math.round(qty / product.case_qty)} case(s)</p>
+                              ) : null}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            {amount > 0 && <p className="font-bold text-primary">₹{amount.toLocaleString()}</p>}
-                            {product.is_wholesale && qty > 0 && product.case_qty ? (
-                              <p className="text-[10px] text-muted-foreground">{Math.round(qty / product.case_qty)} case(s)</p>
-                            ) : null}
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
