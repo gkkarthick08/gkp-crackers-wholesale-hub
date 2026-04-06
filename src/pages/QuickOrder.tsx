@@ -292,8 +292,9 @@ export default function QuickOrder() {
                     const qty = quantities[product.id] || 0;
                     const amount = qty * product.price;
                     const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+                    const isOutOfStock = product.stock !== null && product.stock === 0;
                     return (
-                      <tr key={product.id} className={qty > 0 ? "bg-primary/5" : ""}>
+                      <tr key={product.id} className={`${qty > 0 ? "bg-primary/5" : ""} ${isOutOfStock ? "opacity-60" : ""}`}>
                         <td className="text-center text-muted-foreground text-sm">{index + 1}</td>
                         <td className="text-center">
                           <div
@@ -334,18 +335,22 @@ export default function QuickOrder() {
                           </td>
                         )}
                         <td>
-                          <div className="flex items-center justify-center gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, -1)}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Input type="number" min="0" step={product.is_wholesale ? (product.case_qty || 1) : 1} value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-8 text-center" />
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                            {product.is_wholesale && qty > 0 && product.case_qty ? (
-                              <span className="text-[10px] text-muted-foreground ml-1">{Math.round(qty / product.case_qty)}cs</span>
-                            ) : null}
-                          </div>
+                          {isOutOfStock ? (
+                            <div className="text-center text-xs text-destructive font-medium">Out of Stock</div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1">
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, -1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <Input type="number" min="0" step={product.is_wholesale ? (product.case_qty || 1) : 1} value={qty} onChange={(e) => setQuantity(product.id, e.target.value)} className="w-16 h-8 text-center" />
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              {product.is_wholesale && qty > 0 && product.case_qty ? (
+                                <span className="text-[10px] text-muted-foreground ml-1">{Math.round(qty / product.case_qty)}cs</span>
+                              ) : null}
+                            </div>
+                          )}
                         </td>
                         <td className="text-right font-bold text-primary">
                           {amount > 0 ? `₹${amount.toLocaleString()}` : "-"}
