@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Users, ShoppingCart, TrendingUp, Wallet, Gift, Plus, Eye, Settings, Bell } from "lucide-react";
+import { Package, Users, ShoppingCart, TrendingUp, Wallet, Gift, Plus, Eye, Settings, Bell, UserCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ interface DashboardStats {
   totalWalletBalance: number;
   pendingReferrals: number;
   cancelledOrders: number;
+  pendingDealers: number;
 }
 
 interface RecentOrder {
@@ -41,6 +42,7 @@ export default function AdminDashboard() {
     totalWalletBalance: 0,
     pendingReferrals: 0,
     cancelledOrders: 0,
+    pendingDealers: 0,
   });
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,11 +50,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [products, profiles, orders, referrals] = await Promise.all([
+        const [products, profiles, orders, referrals, pendingDealersRes] = await Promise.all([
           supabase.from("products").select("id", { count: "exact", head: true }),
           supabase.from("profiles").select("id, wallet_balance"),
           supabase.from("orders").select("id, status, final_amount, order_number, customer_name, created_at").order("created_at", { ascending: false }).limit(5),
           supabase.from("referrals").select("id, is_claimed"),
+          supabase.from("profiles").select("id", { count: "exact", head: true }).eq("user_type", "dealer").eq("is_verified", false),
         ]);
 
         const pendingOrders = orders.data?.filter(o => o.status === "pending").length || 0;
@@ -74,6 +77,7 @@ export default function AdminDashboard() {
           totalWalletBalance,
           pendingReferrals,
           cancelledOrders,
+          pendingDealers: pendingDealersRes.count || 0,
         });
 
         setRecentOrders(orders.data || []);
@@ -133,6 +137,14 @@ export default function AdminDashboard() {
       color: "bg-primary/10 text-primary",
       link: "/admin/referrals",
       badge: stats.pendingReferrals > 0 ? `${stats.pendingReferrals} Pending` : undefined,
+    },
+    {
+      title: "Pending Dealers",
+      value: stats.pendingDealers,
+      icon: UserCheck,
+      color: "bg-amber-500/10 text-amber-600",
+      link: "/admin/customers",
+      badge: stats.pendingDealers > 0 ? "Needs Approval" : undefined,
     },
   ];
 

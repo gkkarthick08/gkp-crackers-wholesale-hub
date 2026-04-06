@@ -209,6 +209,7 @@ export type Database = {
           notes: string | null
           order_number: string
           status: Database["public"]["Enums"]["order_status"] | null
+          stock_blocked: boolean
           total_amount: number | null
           total_items: number | null
           updated_at: string | null
@@ -228,6 +229,7 @@ export type Database = {
           notes?: string | null
           order_number: string
           status?: Database["public"]["Enums"]["order_status"] | null
+          stock_blocked?: boolean
           total_amount?: number | null
           total_items?: number | null
           updated_at?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           status?: Database["public"]["Enums"]["order_status"] | null
+          stock_blocked?: boolean
           total_amount?: number | null
           total_items?: number | null
           updated_at?: string | null
@@ -741,6 +744,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      block_stock: { Args: { p_order_id: string }; Returns: boolean }
       claim_referral_bonus: { Args: { referral_id: string }; Returns: boolean }
       generate_order_number: { Args: never; Returns: string }
       has_role: {
@@ -751,6 +755,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      restore_stock: { Args: { p_order_id: string }; Returns: boolean }
       user_wallet_purchase: {
         Args: { order_id: string; purchase_amount: number }
         Returns: boolean

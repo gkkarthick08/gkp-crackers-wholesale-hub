@@ -297,11 +297,12 @@ export default function Products() {
               const savings = getSavings(product);
               const cartQty = getCartQty(product.id);
               const isInCart = cartQty > 0;
+              const isOutOfStock = product.stock !== null && product.stock === 0;
 
               return (
                 <Card
                   key={product.id}
-                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 ${isInCart ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
+                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 ${isInCart ? "ring-2 ring-primary/50 bg-primary/5" : ""} ${isOutOfStock ? "opacity-75" : ""}`}
                 >
                   <CardContent className="p-3 sm:p-4">
                     {/* Product Image */}
@@ -314,7 +315,12 @@ export default function Products() {
                       ) : (
                         <span className="text-4xl sm:text-5xl">{getProductEmoji(product.category?.name)}</span>
                       )}
-                      {discount > 0 && (
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center">
+                          <Badge className="bg-destructive text-destructive-foreground text-xs">Out of Stock</Badge>
+                        </div>
+                      )}
+                      {discount > 0 && !isOutOfStock && (
                         <div className="absolute top-2 left-2 gradient-hero text-white text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                           {discount}% OFF
                         </div>
@@ -324,11 +330,13 @@ export default function Products() {
                           <ShoppingCart className="h-3 w-3" />{cartQty} in cart
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="bg-background/90 rounded-full p-2">
-                          <Eye className="h-5 w-5 text-foreground" />
+                      {!isOutOfStock && (
+                        <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <div className="bg-background/90 rounded-full p-2">
+                            <Eye className="h-5 w-5 text-foreground" />
+                          </div>
                         </div>
-                      </div>
+                      )}
                       {product.brand?.name && (
                         <div className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-border/50">
                           {product.brand.name}
@@ -379,7 +387,11 @@ export default function Products() {
 
                       {/* Action Section */}
                       <div className="pt-2">
-                        {isInCart ? (
+                        {isOutOfStock ? (
+                          <Button variant="outline" size="sm" className="w-full h-9 text-xs sm:text-sm font-medium" disabled>
+                            Out of Stock
+                          </Button>
+                        ) : isInCart ? (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1">

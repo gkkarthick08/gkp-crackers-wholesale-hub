@@ -256,10 +256,22 @@ export default function Cart() {
 
       if (orderError) throw orderError;
 
-      // Create order items - set product_id to null for wholesale items
+      // Create order items - look up wholesale product IDs by product_code
+      let wholesaleIdMap: Record<string, string> = {};
+      const wholesaleCodes = freshItems.filter(i => i.is_wholesale).map(i => i.product_code);
+      if (wholesaleCodes.length > 0) {
+        const { data: wpData } = await (supabase as any)
+          .from("wholesale_products")
+          .select("id, product_code")
+          .in("product_code", wholesaleCodes);
+        if (wpData) {
+          wpData.forEach((wp: any) => { wholesaleIdMap[wp.product_code] = wp.id; });
+        }
+      }
+
       const orderItems = freshItems.map(item => ({
         order_id: order.id,
-        product_id: item.is_wholesale ? null : item.id,
+        product_id: item.is_wholesale ? (wholesaleIdMap[item.product_code] || null) : item.id,
         product_code: item.product_code,
         product_name: item.name,
         quantity: item.quantity,
@@ -272,6 +284,9 @@ export default function Cart() {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // Bug 6: Block stock after order items inserted
+      await supabase.rpc("block_stock", { p_order_id: order.id });
 
       // Deduct wallet balance if used (using secure user_wallet_purchase function)
       if (useWallet && freshWalletDiscount > 0 && user) {
