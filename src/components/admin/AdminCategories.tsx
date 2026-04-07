@@ -173,9 +173,10 @@ export default function AdminCategories() {
 
       setDialogOpen(false);
       fetchCategories();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving category:", error);
-      toast.error(error.message || "Failed to save category");
+      const errorMessage = error instanceof Error ? error.message : "Failed to save category";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -194,9 +195,10 @@ export default function AdminCategories() {
       toast.success("Category deleted successfully");
       setDeleteDialogOpen(false);
       fetchCategories();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting category:", error);
-      toast.error(error.message || "Failed to delete category");
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete category";
+      toast.error(errorMessage);
     }
   };
 
@@ -210,7 +212,7 @@ export default function AdminCategories() {
       if (error) throw error;
       toast.success(`Category ${category.is_active ? "hidden" : "activated"}`);
       fetchCategories();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error toggling category:", error);
       toast.error("Failed to update category");
     }

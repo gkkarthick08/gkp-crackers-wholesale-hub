@@ -16,7 +16,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
+import { LucideIcon } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -128,14 +130,14 @@ export default function AdminAnalytics() {
 
         // Filter out cancelled orders for revenue calculations
         const activeOrders = orders.filter(o => o.status !== "cancelled");
-        const prevActiveOrders = prevOrders.filter((o: any) => o.status !== "cancelled");
+        const prevActiveOrders = prevOrders.filter((o: Database["public"]["Tables"]["orders"]["Row"]) => o.status !== "cancelled");
 
         // Get order IDs that are NOT cancelled (for order items filtering)
         const activeOrderIds = new Set(activeOrders.map(o => o.id));
 
         // Calculate metrics - exclude cancelled orders from revenue
         const totalRevenue = activeOrders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-        const prevRevenue = prevActiveOrders.reduce((sum: number, o: any) => sum + (Number(o.final_amount) || 0), 0);
+        const prevRevenue = prevActiveOrders.reduce((sum: number, o: Database["public"]["Tables"]["orders"]["Row"]) => sum + (Number(o.final_amount) || 0), 0);
         const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
         const orderGrowth = prevActiveOrders.length > 0 ? ((activeOrders.length - prevActiveOrders.length) / prevActiveOrders.length) * 100 : 0;
         const avgOrderValue = activeOrders.length > 0 ? totalRevenue / activeOrders.length : 0;
@@ -246,7 +248,7 @@ export default function AdminAnalytics() {
   }: {
     title: string;
     value: string;
-    icon: any;
+    icon: LucideIcon;
     change?: number;
     changeLabel?: string;
     color: string;

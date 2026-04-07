@@ -388,8 +388,9 @@ export default function BulkProductOperations({
       setIsUploadDialogOpen(false);
       setParsedProducts([]);
       onRefresh();
-    } catch (error: any) {
-      toast({ title: "Error processing products", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error processing products", description: errorMessage, variant: "destructive" });
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -503,8 +504,9 @@ export default function BulkProductOperations({
         setBulkEditValue("");
         onRefresh();
       }
-    } catch (error: any) {
-      toast({ title: "Error updating products", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error updating products", description: errorMessage, variant: "destructive" });
     } finally {
       setIsBulkSaving(false);
     }

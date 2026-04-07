@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart, CartItem } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface NormalizedProduct {
@@ -38,6 +39,16 @@ interface Category {
   id: string;
   name: string;
 }
+
+type WholesaleProductRecord = Database["public"]["Tables"]["wholesale_products"]["Row"] & {
+  category: { name: string } | null;
+  brand: { name: string } | null;
+};
+
+type RetailProductRecord = Database["public"]["Tables"]["products"]["Row"] & {
+  category: { name: string } | null;
+  brand: { name: string } | null;
+};
 
 export default function Products() {
   usePageMeta({ title: "Products — GKP Crackers", description: "Browse our premium collection of Diwali crackers at best wholesale and retail prices." });
@@ -72,14 +83,14 @@ export default function Products() {
 
         if (isVerifiedDealer) {
           // Fetch wholesale products for verified dealers
-          const res = await (supabase as any)
-            .from("wholesale_products")
+          const res = await supabase
+            .from<WholesaleProductRecord>("wholesale_products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order");
 
           if (res.data) {
-            setProducts(res.data.map((p: any) => ({
+            setProducts(res.data.map((p) => ({
               id: p.id,
               product_code: p.product_code,
               name: p.name,
@@ -88,7 +99,7 @@ export default function Products() {
               video_url: p.video_url,
               mrp: p.mrp,
               price: p.sale_price,
-              stock: p.stock,
+              stock: p.stock ?? 0,
               category: p.category,
               brand: p.brand,
               is_wholesale: true,
@@ -99,13 +110,13 @@ export default function Products() {
         } else {
           // Fetch retail products for retail / unverified users
           const res = await supabase
-            .from("products")
+            .from<RetailProductRecord>("products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order");
 
           if (res.data) {
-            setProducts(res.data.map((p: any) => ({
+            setProducts(res.data.map((p) => ({
               id: p.id,
               product_code: p.product_code,
               name: p.name,
@@ -114,7 +125,7 @@ export default function Products() {
               video_url: p.video_url,
               mrp: p.mrp,
               price: p.retail_price,
-              stock: p.stock,
+              stock: p.stock ?? 0,
               category: p.category,
               brand: p.brand,
               is_wholesale: false,

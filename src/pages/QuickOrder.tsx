@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface NormalizedProduct {
@@ -38,6 +39,16 @@ interface Category {
   id: string;
   name: string;
 }
+
+type WholesaleProductRecord = Database["public"]["Tables"]["wholesale_products"]["Row"] & {
+  category: { name: string } | null;
+  brand: { name: string } | null;
+};
+
+type RetailProductRecord = Database["public"]["Tables"]["products"]["Row"] & {
+  category: { name: string } | null;
+  brand: { name: string } | null;
+};
 
 export default function QuickOrder() {
   usePageMeta({ title: "Quick Order — GKP Crackers", description: "Quickly order your favorite crackers with our streamlined ordering system." });
@@ -69,34 +80,51 @@ export default function QuickOrder() {
         if (categoriesRes.data) setCategories(categoriesRes.data);
 
         if (isVerifiedDealer) {
-          const res = await (supabase as any)
-            .from("wholesale_products")
+          const res = await supabase
+            .from<WholesaleProductRecord>("wholesale_products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order");
 
           if (res.data) {
-            setProducts(res.data.map((p: any) => ({
-              id: p.id, product_code: p.product_code, name: p.name,
-              description: p.description, image_url: p.image_url, video_url: p.video_url,
-              mrp: p.mrp, price: p.sale_price, stock: p.stock,
-              category: p.category, brand: p.brand, is_wholesale: true,
-              case_qty: p.case_qty, case_price: p.case_price,
+            setProducts(res.data.map((p) => ({
+              id: p.id,
+              product_code: p.product_code,
+              name: p.name,
+              description: p.description,
+              image_url: p.image_url,
+              video_url: p.video_url,
+              mrp: p.mrp,
+              price: p.sale_price,
+              stock: p.stock ?? 0,
+              category: p.category,
+              brand: p.brand,
+              is_wholesale: true,
+              case_qty: p.case_qty,
+              case_price: p.case_price,
             })));
           }
         } else {
           const res = await supabase
-            .from("products")
+            .from<RetailProductRecord>("products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order");
 
           if (res.data) {
-            setProducts(res.data.map((p: any) => ({
-              id: p.id, product_code: p.product_code, name: p.name,
-              description: p.description, image_url: p.image_url, video_url: p.video_url,
-              mrp: p.mrp, price: p.retail_price, stock: p.stock,
-              category: p.category, brand: p.brand, is_wholesale: false,
+            setProducts(res.data.map((p) => ({
+              id: p.id,
+              product_code: p.product_code,
+              name: p.name,
+              description: p.description,
+              image_url: p.image_url,
+              video_url: p.video_url,
+              mrp: p.mrp,
+              price: p.retail_price,
+              stock: p.stock ?? 0,
+              category: p.category,
+              brand: p.brand,
+              is_wholesale: false,
             })));
           }
         }

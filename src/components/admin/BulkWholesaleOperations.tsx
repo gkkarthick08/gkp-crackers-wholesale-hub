@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import type { Database } from "@/integrations/supabase/types";
 import { Upload, Download, FileSpreadsheet, Loader2, CheckCircle2, XCircle, AlertTriangle, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,10 @@ interface WholesaleProduct {
   category: { name: string } | null;
   brand: { name: string } | null;
 }
+
+type WholesaleProductRow = Database["public"]["Tables"]["wholesale_products"]["Row"];
+
+type WholesaleProductInsert = Database["public"]["Tables"]["wholesale_products"]["Insert"];
 
 interface Category { id: string; name: string; }
 interface Brand { id: string; name: string; }
@@ -192,16 +197,24 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
         const categoryId = categories.find(c => c.name.toLowerCase() === product.category_name.toLowerCase())?.id;
         const brandId = brands.find(b => b.name.toLowerCase() === product.brand_name.toLowerCase())?.id;
         const casePrice = product.sale_price * product.case_qty;
-        const productData = {
-          product_code: product.product_code, name: product.name, description: product.description || null,
-          mrp: product.mrp, purchase_price: product.purchase_price, sale_price: product.sale_price,
-          case_qty: product.case_qty, case_price: casePrice, stock: product.stock,
-          category_id: categoryId || null, brand_id: brandId || null, is_visible: product.is_visible,
+        const productData: WholesaleProductInsert = {
+          product_code: product.product_code,
+          name: product.name,
+          description: product.description || null,
+          mrp: product.mrp,
+          purchase_price: product.purchase_price,
+          sale_price: product.sale_price,
+          case_qty: product.case_qty,
+          case_price: casePrice,
+          stock: product.stock,
+          category_id: categoryId || null,
+          brand_id: brandId || null,
+          is_visible: product.is_visible,
         };
         if (uploadMode === "update") {
-          await (supabase as any).from("wholesale_products").update(productData).eq("product_code", product.product_code);
+          await supabase.from<WholesaleProductRow>("wholesale_products").update(productData).eq("product_code", product.product_code);
         } else {
-          await (supabase as any).from("wholesale_products").insert(productData);
+          await supabase.from<WholesaleProductRow>("wholesale_products").insert(productData);
         }
         processed++;
         setUploadProgress(Math.round((processed / validProducts.length) * 100));
@@ -210,8 +223,9 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
       setIsUploadDialogOpen(false);
       setParsedProducts([]);
       onRefresh();
-    } catch (error: any) {
-      toast({ title: "Error processing products", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error("Unknown error");
+      toast({ title: "Error processing products", description: err.message, variant: "destructive" });
     } finally { setIsUploading(false); setUploadProgress(0); }
   };
 
@@ -226,7 +240,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
     if (!bulkEditField || selectedProducts.length === 0) { toast({ title: "Select products and a field", variant: "destructive" }); return; }
     setIsBulkSaving(true);
     try {
-      let updateData: Record<string, any> = {};
+      let updateData: Partial<WholesaleProductRow> = {};
       switch (bulkEditField) {
         case "stock": updateData.stock = parseInt(bulkEditValue) || 0; break;
         case "mrp": updateData.mrp = parseFloat(bulkEditValue) || 0; break;
@@ -239,14 +253,14 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
           const newCaseQty = parseInt(bulkEditValue) || 1;
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
-            if (p) await (supabase as any).from("wholesale_products").update({ case_qty: newCaseQty, case_price: p.sale_price * newCaseQty }).eq("id", id);
+            if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ case_qty: newCaseQty, case_price: p.sale_price * newCaseQty }).eq("id", id);
           }
           toast({ title: `Updated ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
         case "stock_increase":
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
-            if (p) await (supabase as any).from("wholesale_products").update({ stock: p.stock + (parseInt(bulkEditValue) || 0) }).eq("id", id);
+            if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ stock: p.stock + (parseInt(bulkEditValue) || 0) }).eq("id", id);
           }
           toast({ title: `Updated ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
@@ -256,7 +270,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
             const p = products.find(x => x.id === id);
             if (p) {
               const newSale = Math.round(p.sale_price * (1 + percent / 100));
-              await (supabase as any).from("wholesale_products").update({
+              await supabase.from<WholesaleProductRow>("wholesale_products").update({
                 mrp: Math.round(p.mrp * (1 + percent / 100)),
                 purchase_price: Math.round(p.purchase_price * (1 + percent / 100)),
                 sale_price: newSale,
@@ -272,17 +286,18 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
         if (updateData.sale_price) {
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
-            if (p) await (supabase as any).from("wholesale_products").update({ ...updateData, case_price: updateData.sale_price * p.case_qty }).eq("id", id);
+            if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ ...updateData, case_price: updateData.sale_price * p.case_qty }).eq("id", id);
           }
         } else {
-          const { error } = await (supabase as any).from("wholesale_products").update(updateData).in("id", selectedProducts);
+          const { error } = await supabase.from<WholesaleProductRow>("wholesale_products").update(updateData).in("id", selectedProducts);
           if (error) throw error;
         }
         toast({ title: `Updated ${selectedProducts.length} products` });
         resetBulkEdit(); onRefresh();
       }
-    } catch (error: any) {
-      toast({ title: "Error updating products", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error("Unknown error");
+      toast({ title: "Error updating products", description: err.message, variant: "destructive" });
     } finally { setIsBulkSaving(false); }
   };
 

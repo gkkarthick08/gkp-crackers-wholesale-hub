@@ -108,8 +108,9 @@ export default function AdminWallet() {
 
       setIsDialogOpen(false);
       fetchUsers();
-    } catch (error: any) {
-      toast({ title: "Transaction failed", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error("Unknown error");
+      toast({ title: "Transaction failed", description: err.message, variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }

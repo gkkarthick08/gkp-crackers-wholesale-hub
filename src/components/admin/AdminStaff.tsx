@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { Database } from "@/integrations/supabase/types";
 import { UserPlus, Trash2, Shield, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,8 +50,9 @@ export default function AdminStaff() {
         });
       }
       setStaff(staffList);
-    } catch (err: any) {
-      toast({ title: "Error loading staff", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Unknown error");
+      toast({ title: "Error loading staff", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -86,15 +88,16 @@ export default function AdminStaff() {
       // Add staff role
       const { error } = await supabase.from("user_roles").insert({
         user_id: profile.id,
-        role: "staff" as any,
+        role: "staff" as Database["public"]["Enums"]["app_role"],
       });
       if (error) throw error;
 
       toast({ title: "Staff added!", description: `${profile.full_name} can now access POS.` });
       setSearchEmail("");
       fetchStaff();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Unknown error");
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsAdding(false);
     }
@@ -106,8 +109,9 @@ export default function AdminStaff() {
       if (error) throw error;
       toast({ title: "Staff removed", description: `${member.full_name} no longer has staff access.` });
       fetchStaff();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Unknown error");
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 

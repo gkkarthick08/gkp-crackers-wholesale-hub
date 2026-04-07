@@ -139,11 +139,12 @@ export default function Account() {
         title: "Profile Updated",
         description: "Your account details have been saved successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating profile:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update profile. Please try again.";
       toast({
         title: "Update Failed",
-        description: error.message || "Failed to update profile. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -197,11 +198,12 @@ export default function Account() {
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error changing password:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to change password. Please try again.";
       toast({
         title: "Password Change Failed",
-        description: error.message || "Failed to change password. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

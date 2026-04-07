@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 interface PageSEO {
   title: string;
@@ -17,6 +18,8 @@ interface PageSEO {
 interface SEOSettings {
   [page: string]: PageSEO;
 }
+
+type PublicSettingRow = Database["public"]["Tables"]["public_settings"]["Row"];
 
 const defaultPages: Record<string, PageSEO> = {
   home: { title: "GKP Crackers — Premium Crackers at Best Prices", description: "Buy premium quality crackers at the best prices from GKP Crackers.", keywords: "crackers, diwali, fireworks" },
@@ -41,8 +44,8 @@ export default function AdminSEO() {
           .select("key, value")
           .eq("key", "seo_settings")
           .maybeSingle();
-        if (data?.value) {
-          setSeo((prev) => ({ ...prev, ...(data.value as unknown as SEOSettings) }));
+        if (data?.value && typeof data.value === "object") {
+          setSeo((prev) => ({ ...prev, ...(data.value as SEOSettings) }));
         }
       } catch (err) {
         console.error("Error fetching SEO settings:", err);
@@ -57,15 +60,16 @@ export default function AdminSEO() {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from("public_settings")
+        .from<PublicSettingRow>("public_settings")
         .upsert(
-          { key: "seo_settings", value: seo as any, updated_at: new Date().toISOString() },
+          { key: "seo_settings", value: seo as Json, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         );
       if (error) throw error;
       toast({ title: "SEO settings saved" });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error("Unknown error");
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }

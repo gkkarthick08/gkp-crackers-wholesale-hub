@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { validateCustomerDetails } from "@/lib/validations";
 
@@ -207,13 +208,13 @@ export default function Cart() {
       }
 
       if (wholesaleIds.length > 0) {
-        const { data: wholesaleProducts } = await (supabase as any)
+        const { data: wholesaleProducts } = await supabase
           .from("wholesale_products")
           .select("id, sale_price")
           .in("id", wholesaleIds);
 
         if (wholesaleProducts) {
-          wholesaleProducts.forEach((p: any) => {
+          wholesaleProducts.forEach((p: Database["public"]["Tables"]["wholesale_products"]["Row"]) => {
             priceMap[p.id] = p.sale_price;
           });
         }
@@ -260,12 +261,12 @@ export default function Cart() {
       let wholesaleIdMap: Record<string, string> = {};
       const wholesaleCodes = freshItems.filter(i => i.is_wholesale).map(i => i.product_code);
       if (wholesaleCodes.length > 0) {
-        const { data: wpData } = await (supabase as any)
+        const { data: wpData } = await supabase
           .from("wholesale_products")
           .select("id, product_code")
           .in("product_code", wholesaleCodes);
         if (wpData) {
-          wpData.forEach((wp: any) => { wholesaleIdMap[wp.product_code] = wp.id; });
+          wpData.forEach((wp: Database["public"]["Tables"]["wholesale_products"]["Row"]) => { wholesaleIdMap[wp.product_code] = wp.id; });
         }
       }
 
@@ -314,11 +315,12 @@ export default function Cart() {
 
       clearCart();
       navigate("/orders");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Order error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Failed to place order",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

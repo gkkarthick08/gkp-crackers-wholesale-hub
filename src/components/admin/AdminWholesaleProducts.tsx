@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
 interface WholesaleProduct {
   id: string;
@@ -82,7 +83,7 @@ export default function AdminWholesaleProducts() {
     setIsLoading(true);
     try {
       const [productsRes, categoriesRes, brandsRes] = await Promise.all([
-        (supabase as any)
+        supabase
           .from("wholesale_products")
           .select(`*, category:categories(name), brand:brands(name)`)
           .order("display_order"),
@@ -187,8 +188,9 @@ export default function AdminWholesaleProducts() {
       setUploadProgress(100);
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
       return urlData.publicUrl;
-    } catch (error: any) {
-      toast({ title: "Error uploading image", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error uploading image", description: errorMessage, variant: "destructive" });
       return null;
     } finally {
       setIsUploading(false);
@@ -234,7 +236,7 @@ export default function AdminWholesaleProducts() {
       };
 
       if (!editingProduct) {
-        const { data: newProduct, error } = await (supabase as any)
+        const { data: newProduct, error } = await supabase
           .from("wholesale_products")
           .insert(productData)
           .select()
@@ -243,13 +245,13 @@ export default function AdminWholesaleProducts() {
         if (imageFile && newProduct) {
           imageUrl = await uploadImage(newProduct.id);
           if (imageUrl) {
-            await (supabase as any).from("wholesale_products").update({ image_url: imageUrl }).eq("id", newProduct.id);
+            await supabase.from("wholesale_products").update({ image_url: imageUrl }).eq("id", newProduct.id);
           }
         }
         toast({ title: "Wholesale product added successfully" });
       } else {
         if (imageFile) imageUrl = await uploadImage(editingProduct.id);
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from("wholesale_products")
           .update({ ...productData, image_url: imageUrl || null })
           .eq("id", editingProduct.id);
@@ -258,8 +260,9 @@ export default function AdminWholesaleProducts() {
       }
       setIsDialogOpen(false);
       fetchData();
-    } catch (error: any) {
-      toast({ title: "Error saving product", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error saving product", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -267,7 +270,7 @@ export default function AdminWholesaleProducts() {
 
   const toggleVisibility = async (product: WholesaleProduct) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("wholesale_products")
         .update({ is_visible: !product.is_visible })
         .eq("id", product.id);
@@ -279,7 +282,7 @@ export default function AdminWholesaleProducts() {
   const deleteProduct = async (product: WholesaleProduct) => {
     if (!confirm(`Delete "${product.name}"?`)) return;
     try {
-      const { error } = await (supabase as any).from("wholesale_products").delete().eq("id", product.id);
+      const { error } = await supabase.from("wholesale_products").delete().eq("id", product.id);
       if (error) throw error;
       toast({ title: "Product deleted" });
       fetchData();

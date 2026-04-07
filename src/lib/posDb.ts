@@ -3,6 +3,8 @@
  * Caches products and queues orders for sync
  */
 
+import { Database } from "@/integrations/supabase/types";
+
 const DB_NAME = "gkp_pos";
 const DB_VERSION = 1;
 
@@ -54,7 +56,7 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function cacheProducts(products: any[], storeName: "products" | "wholesale_products") {
+export async function cacheProducts(products: (Database["public"]["Tables"]["products"]["Row"] | Database["public"]["Tables"]["wholesale_products"]["Row"])[], storeName: "products" | "wholesale_products") {
   const db = await openDb();
   const tx = db.transaction(storeName, "readwrite");
   const store = tx.objectStore(storeName);
@@ -66,7 +68,7 @@ export async function cacheProducts(products: any[], storeName: "products" | "wh
   });
 }
 
-export async function getCachedProducts(storeName: "products" | "wholesale_products"): Promise<any[]> {
+export async function getCachedProducts(storeName: "products" | "wholesale_products"): Promise<(Database["public"]["Tables"]["products"]["Row"] | Database["public"]["Tables"]["wholesale_products"]["Row"])[]> {
   const db = await openDb();
   const tx = db.transaction(storeName, "readonly");
   const store = tx.objectStore(storeName);

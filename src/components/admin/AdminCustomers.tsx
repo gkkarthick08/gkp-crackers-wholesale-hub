@@ -64,11 +64,12 @@ export default function AdminCustomers() {
 
       if (error) throw error;
       setCustomers((data as Customer[]) || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching customers:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

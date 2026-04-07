@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
 interface SiteSettings {
   storeName: string;
@@ -97,7 +98,16 @@ export default function AdminSettings() {
           const loadedSettings: Partial<SiteSettings> = {};
           data.forEach((item) => {
             if (item.key in defaultSettings) {
-              (loadedSettings as any)[item.key] = item.value;
+              // Type-safe assignment based on the key
+              const key = item.key as keyof SiteSettings;
+              const defaultValue = defaultSettings[key];
+              if (typeof defaultValue === "boolean") {
+                loadedSettings[key] = (item.value === "true" || item.value === true) as SiteSettings[typeof key];
+              } else if (typeof defaultValue === "number") {
+                loadedSettings[key] = Number(item.value) as SiteSettings[typeof key];
+              } else {
+                loadedSettings[key] = item.value as SiteSettings[typeof key];
+              }
             }
           });
           setSettings({ ...defaultSettings, ...loadedSettings });
@@ -122,7 +132,7 @@ export default function AdminSettings() {
         const { error } = await supabase
           .from("site_settings")
           .upsert(
-            { key, value: value as any, updated_at: new Date().toISOString() },
+            { key, value: value as Database["public"]["Tables"]["site_settings"]["Insert"]["value"], updated_at: new Date().toISOString() },
             { onConflict: "key" }
           );
 
@@ -133,10 +143,11 @@ export default function AdminSettings() {
         title: "Settings saved",
         description: "Your settings have been updated successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Error saving settings",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -144,7 +155,7 @@ export default function AdminSettings() {
     }
   };
 
-  const updateSetting = (key: keyof SiteSettings, value: any) => {
+  const updateSetting = (key: keyof SiteSettings, value: SiteSettings[typeof key]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 

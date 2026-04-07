@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { Database, Json } from "@/integrations/supabase/types";
 import {
   Loader2, Save, Receipt, Store, FileText, Ruler, Percent
 } from "lucide-react";
@@ -55,7 +56,8 @@ export function usePOSSettings() {
           const loaded: Partial<POSSettings> = {};
           data.forEach((item) => {
             if (item.key in defaultPOSSettings) {
-              (loaded as any)[item.key] = item.value;
+              const key = item.key as keyof POSSettings;
+              loaded[key] = item.value as POSSettings[typeof key];
             }
           });
           setSettings((prev) => ({ ...prev, ...loaded }));
@@ -82,14 +84,15 @@ export default function AdminPOSSettings() {
     const fetchSettings = async () => {
       try {
         const { data } = await supabase
-          .from("site_settings")
+          .from<Database["public"]["Tables"]["site_settings"]["Row"]>("site_settings")
           .select("key, value")
           .like("key", "pos%");
         if (data && data.length > 0) {
           const loaded: Partial<POSSettings> = {};
           data.forEach((item) => {
             if (item.key in defaultPOSSettings) {
-              (loaded as any)[item.key] = item.value;
+              const key = item.key as keyof POSSettings;
+              loaded[key] = item.value as POSSettings[typeof key];
             }
           });
           setSettings((prev) => ({ ...prev, ...loaded }));
@@ -107,23 +110,25 @@ export default function AdminPOSSettings() {
     setIsSaving(true);
     try {
       for (const [key, value] of Object.entries(settings)) {
+        const settingKey = key as keyof POSSettings;
         const { error } = await supabase
           .from("site_settings")
           .upsert(
-            { key, value: value as any, updated_at: new Date().toISOString() },
+            { key: settingKey, value: value as Json, updated_at: new Date().toISOString() },
             { onConflict: "key" }
           );
         if (error) throw error;
       }
       toast({ title: "POS Settings saved", description: "Changes applied to all future bills." });
-    } catch (error: any) {
-      toast({ title: "Error saving", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error("Unknown error");
+      toast({ title: "Error saving", description: err.message, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const update = (key: keyof POSSettings, value: any) => {
+  const update = (key: keyof POSSettings, value: POSSettings[keyof POSSettings]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 

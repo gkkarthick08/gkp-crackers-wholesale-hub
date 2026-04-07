@@ -216,8 +216,9 @@ export default function AdminProducts() {
         .getPublicUrl(fileName);
 
       return urlData.publicUrl;
-    } catch (error: any) {
-      toast({ title: "Error uploading image", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error uploading image", description: errorMessage, variant: "destructive" });
       return null;
     } finally {
       setIsUploading(false);
@@ -322,8 +323,9 @@ export default function AdminProducts() {
 
       setIsDialogOpen(false);
       fetchData();
-    } catch (error: any) {
-      toast({ title: "Error saving product", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error saving product", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -337,8 +339,9 @@ export default function AdminProducts() {
         .eq("id", product.id);
       if (error) throw error;
       fetchData();
-    } catch (error: any) {
-      toast({ title: "Error updating visibility", variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error updating visibility", description: errorMessage, variant: "destructive" });
     }
   };
 
@@ -349,8 +352,9 @@ export default function AdminProducts() {
       if (error) throw error;
       toast({ title: "Product deleted" });
       fetchData();
-    } catch (error: any) {
-      toast({ title: "Error deleting product", variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error deleting product", description: errorMessage, variant: "destructive" });
     }
   };
 

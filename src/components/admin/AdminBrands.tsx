@@ -136,8 +136,9 @@ export default function AdminBrands() {
 
       setIsDialogOpen(false);
       fetchBrands();
-    } catch (error: any) {
-      toast({ title: "Error saving brand", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast({ title: "Error saving brand", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }

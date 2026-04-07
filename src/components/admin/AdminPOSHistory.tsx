@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { Database } from "@/integrations/supabase/types";
 import {
   Search, Eye, Edit2, Printer, Receipt, Filter,
   ChevronDown, ChevronUp, Plus, Minus, X, Check, Save,
@@ -27,26 +28,11 @@ interface PosOrderItem {
   is_wholesale: boolean;
 }
 
-interface PosOrderRow {
-  id: string;
-  bill_number: string;
-  created_at: string;
-  customer_name: string;
-  customer_phone: string | null;
-  customer_address: string | null;
-  billing_mode: string;
-  payment_method: string;
-  total_amount: number;
-  mrp_total: number;
-  savings: number;
-  packing_charges: number;
-  delivery_charges: number;
-  payment_status: string;
-  amount_paid: number;
-  balance_due: number;
-  notes: string | null;
-  pos_order_items?: PosOrderItem[];
-}
+type PosOrderItemRow = Database["public"]["Tables"]["pos_order_items"]["Row"];
+
+type PosOrderRow = Database["public"]["Tables"]["pos_orders"]["Row"] & {
+  pos_order_items?: PosOrderItemRow[] | null;
+};
 
 const statusColors: Record<string, string> = {
   paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
@@ -80,13 +66,14 @@ export default function AdminPOSHistory() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("pos_orders")
+        .from<PosOrderRow>("pos_orders")
         .select("*, pos_order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setOrders((data as any[]) || []);
-    } catch (err: any) {
-      toast({ title: "Error loading bills", description: err.message, variant: "destructive" });
+      setOrders(data || []);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Unknown error");
+      toast({ title: "Error loading bills", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -167,8 +154,9 @@ export default function AdminPOSHistory() {
       setIsEditing(false);
       fetchOrders();
       setSelectedOrder(null);
-    } catch (err: any) {
-      toast({ title: "Error saving", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Unknown error");
+      toast({ title: "Error saving", description: error.message, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }

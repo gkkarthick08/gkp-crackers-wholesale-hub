@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import {
   cacheProducts, getCachedProducts, savePosOrder, getUnsyncedOrders,
   markOrderSynced, PosOrder, PosOrderItem
@@ -32,6 +33,16 @@ interface PosProduct {
   case_qty?: number;
   case_price?: number;
 }
+
+type WholesaleProductRow = Database["public"]["Tables"]["wholesale_products"]["Row"] & {
+  category: { name: string } | null;
+  brand: { name: string } | null;
+};
+
+type RetailProductRow = Database["public"]["Tables"]["products"]["Row"] & {
+  category: { name: string } | null;
+  brand: { name: string } | null;
+};
 
 interface PosCartItem extends PosProduct {
   quantity: number;
@@ -83,37 +94,69 @@ export default function POS() {
     setIsLoading(true);
     try {
       if (isOnline) {
-        const table = billingMode === "wholesale" ? "wholesale_products" : "products";
-        const { data } = await (supabase as any)
-          .from(table)
-          .select("*, category:categories(name), brand:brands(name)")
-          .eq("is_visible", true)
-          .order("name");
-        if (data) {
-          const mapped = data.map((p: any) => ({
-            id: p.id, product_code: p.product_code, name: p.name,
-            image_url: p.image_url, mrp: p.mrp,
-            price: billingMode === "wholesale" ? p.sale_price : p.retail_price,
-            stock: p.stock || 0, category_name: p.category?.name || "",
-            brand_name: p.brand?.name || "",
-            is_wholesale: billingMode === "wholesale",
-            case_qty: p.case_qty, case_price: p.case_price,
-          }));
-          setProducts(mapped);
-          const storeName = billingMode === "wholesale" ? "wholesale_products" : "products";
-          await cacheProducts(mapped, storeName as any);
-          setCategories([...new Set(mapped.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
+        if (billingMode === "wholesale") {
+          const { data } = await supabase
+            .from<WholesaleProductRow>("wholesale_products")
+            .select("*, category:categories(name), brand:brands(name)")
+            .eq("is_visible", true)
+            .order("name");
+          if (data) {
+            const mapped = data.map((p) => ({
+              id: p.id,
+              product_code: p.product_code,
+              name: p.name,
+              image_url: p.image_url,
+              mrp: p.mrp,
+              price: p.sale_price,
+              stock: p.stock ?? 0,
+              category_name: p.category?.name || "",
+              brand_name: p.brand?.name || "",
+              is_wholesale: true,
+              case_qty: p.case_qty,
+              case_price: p.case_price,
+            }));
+            setProducts(mapped);
+            const storeName: "products" | "wholesale_products" = "wholesale_products";
+            await cacheProducts(mapped, storeName);
+            setCategories([...new Set(mapped.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
+          }
+        } else {
+          const { data } = await supabase
+            .from<RetailProductRow>("products")
+            .select("*, category:categories(name), brand:brands(name)")
+            .eq("is_visible", true)
+            .order("name");
+          if (data) {
+            const mapped = data.map((p) => ({
+              id: p.id,
+              product_code: p.product_code,
+              name: p.name,
+              image_url: p.image_url,
+              mrp: p.mrp,
+              price: p.retail_price,
+              stock: p.stock ?? 0,
+              category_name: p.category?.name || "",
+              brand_name: p.brand?.name || "",
+              is_wholesale: false,
+              case_qty: p.case_qty,
+              case_price: p.case_price,
+            }));
+            setProducts(mapped);
+            const storeName: "products" | "wholesale_products" = "products";
+            await cacheProducts(mapped, storeName);
+            setCategories([...new Set(mapped.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
+          }
         }
       } else {
-        const storeName = billingMode === "wholesale" ? "wholesale_products" : "products";
-        const cached = await getCachedProducts(storeName as any);
+        const storeName: "products" | "wholesale_products" = billingMode === "wholesale" ? "wholesale_products" : "products";
+        const cached = await getCachedProducts(storeName);
         setProducts(cached);
         setCategories([...new Set(cached.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
       }
     } catch (err) {
       console.error("Error loading POS products:", err);
-      const storeName = billingMode === "wholesale" ? "wholesale_products" : "products";
-      const cached = await getCachedProducts(storeName as any);
+      const storeName: "products" | "wholesale_products" = billingMode === "wholesale" ? "wholesale_products" : "products";
+      const cached = await getCachedProducts(storeName);
       setProducts(cached);
     } finally {
       setIsLoading(false);

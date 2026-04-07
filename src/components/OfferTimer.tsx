@@ -38,7 +38,16 @@ export default function OfferTimer() {
         if (data && data.length > 0) {
           const loadedSettings: Partial<CountdownSettings> = {};
           data.forEach((item) => {
-            (loadedSettings as any)[item.key] = item.value;
+            if (item.key in settings) {
+              // Type-safe assignment based on the key
+              const key = item.key as keyof CountdownSettings;
+              const defaultValue = settings[key];
+              if (typeof defaultValue === "boolean") {
+                loadedSettings[key] = (item.value === "true" || item.value === true) as CountdownSettings[typeof key];
+              } else {
+                loadedSettings[key] = item.value as CountdownSettings[typeof key];
+              }
+            }
           });
           setSettings((prev) => ({ ...prev, ...loadedSettings }));
         }
