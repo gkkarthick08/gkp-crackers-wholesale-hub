@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { User, Phone, Mail, MapPin, Building2, FileText, Save, Loader2, Shield, Lock, Eye, EyeOff, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { User, Phone, Mail, MapPin, Building2, FileText, Save, Loader2, Shield, Lock, Eye, EyeOff, Clock, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";

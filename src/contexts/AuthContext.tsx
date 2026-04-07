@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("user_roles")
         .select("id")
         .eq("user_id", userId)
-        .eq("role", "staff" as any)
+        .eq("role", "staff")
         .maybeSingle();
       setIsStaff(!!data);
     } catch {

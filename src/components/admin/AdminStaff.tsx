@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types";
 import { UserPlus, Trash2, Shield, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,9 @@ export default function AdminStaff() {
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => { fetchStaff(); }, []);
+  useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: roles, error } = await supabase
@@ -56,7 +56,7 @@ export default function AdminStaff() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const addStaff = async () => {
     if (!searchEmail.trim()) return;

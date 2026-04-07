@@ -152,7 +152,7 @@ export default function AdminBrands() {
         .eq("id", brand.id);
       if (error) throw error;
       fetchBrands();
-    } catch (error) {
+    } catch {
       toast({ title: "Error updating brand", variant: "destructive" });
     }
   };
@@ -174,7 +174,7 @@ export default function AdminBrands() {
       if (error) throw error;
       toast({ title: "Brand deleted" });
       fetchBrands();
-    } catch (error) {
+    } catch {
       toast({ title: "Error deleting brand", variant: "destructive" });
     }
   };

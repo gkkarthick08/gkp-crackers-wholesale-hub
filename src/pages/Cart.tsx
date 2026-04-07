@@ -18,11 +18,6 @@ import { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { validateCustomerDetails } from "@/lib/validations";
 
-interface SiteSettings {
-  minOrderValue: number;
-  minOrderValueDealer: number;
-}
-
 export default function Cart() {
   usePageMeta({ title: "Cart — GKP Crackers", description: "Review your cart and place your order." });
   const { items, updateQuantity, removeItem, clearCart, totalAmount, totalItems, totalMrp, totalSavings } = useCart();
@@ -47,7 +42,7 @@ export default function Cart() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("site_settings")
           .select("key, value")
           .in("key", ["minOrderValue", "minOrderValueDealer"]);
@@ -62,8 +57,8 @@ export default function Cart() {
             setMinOrderValue(Number(minOrderSetting.value) || 500);
           }
         }
-      } catch (error) {
-        console.error("Error fetching settings:", error);
+      } catch (_error) {
+        console.error("Error fetching settings:", _error);
       }
     };
 
@@ -191,7 +186,7 @@ export default function Cart() {
       const retailIds = items.filter(i => !i.is_wholesale).map(i => i.id);
       const wholesaleIds = items.filter(i => i.is_wholesale).map(i => i.id);
 
-      let priceMap: Record<string, number> = {};
+      const priceMap: Record<string, number> = {};
 
       if (retailIds.length > 0) {
         const { data: retailProducts } = await supabase
@@ -258,7 +253,7 @@ export default function Cart() {
       if (orderError) throw orderError;
 
       // Create order items - look up wholesale product IDs by product_code
-      let wholesaleIdMap: Record<string, string> = {};
+      const wholesaleIdMap: Record<string, string> = {};
       const wholesaleCodes = freshItems.filter(i => i.is_wholesale).map(i => i.product_code);
       if (wholesaleCodes.length > 0) {
         const { data: wpData } = await supabase

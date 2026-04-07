@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, Megaphone, Gift, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,7 +73,7 @@ export default function AdminAnnouncements() {
     display_order: 0,
   });
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -89,11 +89,11 @@ export default function AdminAnnouncements() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchAnnouncements();
-  }, []);
+  }, [fetchAnnouncements]);
 
   const resetForm = () => {
     setFormData({
@@ -187,7 +187,7 @@ export default function AdminAnnouncements() {
       if (error) throw error;
       toast({ title: "Announcement deleted" });
       fetchAnnouncements();
-    } catch (error) {
+    } catch {
       toast({ title: "Error deleting announcement", variant: "destructive" });
     }
   };
@@ -200,7 +200,7 @@ export default function AdminAnnouncements() {
         .eq("id", id);
       if (error) throw error;
       fetchAnnouncements();
-    } catch (error) {
+    } catch {
       toast({ title: "Error updating status", variant: "destructive" });
     }
   };

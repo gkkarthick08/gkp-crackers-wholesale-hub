@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Clock, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +23,11 @@ export default function OfferTimer() {
     countdownTargetDate: new Date(new Date().getFullYear(), 10, 1).toISOString().split('T')[0],
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  const countdownSettings = useMemo(() => ({
+    enabled: settings.countdownEnabled,
+    targetDate: settings.countdownTargetDate,
+  }), [settings.countdownEnabled, settings.countdownTargetDate]);
 
   // Fetch countdown settings from database
   useEffect(() => {
@@ -63,9 +68,9 @@ export default function OfferTimer() {
 
   // Countdown timer logic
   useEffect(() => {
-    if (!settings.countdownEnabled) return;
+    if (!countdownSettings.enabled) return;
 
-    const targetDate = new Date(settings.countdownTargetDate);
+    const targetDate = new Date(countdownSettings.targetDate);
     targetDate.setHours(23, 59, 59, 999); // End of the target day
 
     const timer = setInterval(() => {
@@ -85,7 +90,7 @@ export default function OfferTimer() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [settings.countdownEnabled, settings.countdownTargetDate]);
+  }, [countdownSettings]);
 
   // Don't render if disabled or loading
   if (isLoading || !settings.countdownEnabled) {

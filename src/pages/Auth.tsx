@@ -58,7 +58,7 @@ export default function Auth() {
     if (refCode && !formData.referralCode) {
       setFormData(prev => ({ ...prev, referralCode: refCode }));
     }
-  }, [refCode]);
+  }, [refCode, formData.referralCode]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -158,7 +158,7 @@ export default function Auth() {
         setIsLogin(true);
         setFormData(prev => ({ ...prev, password: "" }));
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",

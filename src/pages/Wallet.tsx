@@ -11,7 +11,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Wallet() {
   usePageMeta({ title: "Wallet & Referrals — GKP Crackers", description: "Manage your wallet balance and referral rewards." });
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

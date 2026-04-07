@@ -46,7 +46,7 @@ export default function ProductDetailDialog({
       setQuantity(product.is_wholesale && product.case_qty ? product.case_qty : 1);
       setShowVideo(false);
     }
-  }, [product?.id]);
+  }, [product]);
 
   if (!product) return null;
 

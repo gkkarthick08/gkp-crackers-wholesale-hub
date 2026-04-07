@@ -240,7 +240,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
     if (!bulkEditField || selectedProducts.length === 0) { toast({ title: "Select products and a field", variant: "destructive" }); return; }
     setIsBulkSaving(true);
     try {
-      let updateData: Partial<WholesaleProductRow> = {};
+      const updateData: Partial<WholesaleProductRow> = {};
       switch (bulkEditField) {
         case "stock": updateData.stock = parseInt(bulkEditValue) || 0; break;
         case "mrp": updateData.mrp = parseFloat(bulkEditValue) || 0; break;
@@ -249,7 +249,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
         case "is_visible": updateData.is_visible = bulkEditValue === "true"; break;
         case "category_id": updateData.category_id = bulkEditValue || null; break;
         case "brand_id": updateData.brand_id = bulkEditValue || null; break;
-        case "case_qty":
+        case "case_qty": {
           const newCaseQty = parseInt(bulkEditValue) || 1;
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
@@ -257,14 +257,16 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
           }
           toast({ title: `Updated ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
-        case "stock_increase":
+        }
+        case "stock_increase": {
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
             if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ stock: p.stock + (parseInt(bulkEditValue) || 0) }).eq("id", id);
           }
           toast({ title: `Updated ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
-        case "price_percent":
+        }
+        case "price_percent": {
           const percent = parseFloat(bulkEditValue) || 0;
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
@@ -280,6 +282,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
           }
           toast({ title: `Updated prices for ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
+        }
       }
       if (Object.keys(updateData).length > 0) {
         // If sale_price changed, recalculate case_price for each

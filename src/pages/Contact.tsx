@@ -90,7 +90,7 @@ export default function Contact() {
 
     try {
       // Save to database
-      const { error } = await supabase.from("contact_messages" as any).insert([{
+      const { error } = await supabase.from("contact_messages").insert([{
         name: formData.name,
         email: formData.email,
         phone: formData.phone,

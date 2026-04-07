@@ -130,7 +130,7 @@ export default function ResetPassword() {
       setTimeout(() => {
         navigate("/auth");
       }, 3000);
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",

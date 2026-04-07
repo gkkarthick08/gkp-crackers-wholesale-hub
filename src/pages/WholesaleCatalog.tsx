@@ -54,7 +54,7 @@ export default function WholesaleCatalog() {
       setIsLoading(true);
       try {
         const [productsRes, categoriesRes] = await Promise.all([
-          (supabase as any)
+          (supabase as typeof supabase)
             .from("wholesale_products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)

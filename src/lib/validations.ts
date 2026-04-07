@@ -13,7 +13,7 @@ export const customerDetailsSchema = z.object({
     .trim()
     .min(10, { message: "Phone number must be at least 10 digits" })
     .max(15, { message: "Phone number is too long" })
-    .regex(/^[\+]?[0-9\s\-]+$/, { message: "Invalid phone number format" }),
+    .regex(/^[+]?[0-9\s-]+$/, { message: "Invalid phone number format" }),
   address: z
     .string()
     .trim()

@@ -51,7 +51,7 @@ export default function ForgotPassword() {
         title: "Email Sent!",
         description: "Check your inbox for the password reset link.",
       });
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",

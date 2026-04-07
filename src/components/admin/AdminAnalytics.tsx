@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { 
-  BarChart3, 
   TrendingUp, 
-  TrendingDown, 
   Users, 
   ShoppingCart, 
   Package, 
@@ -12,9 +10,9 @@ import {
   ArrowDownRight,
   Trophy
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
@@ -286,7 +284,7 @@ export default function AdminAnalytics() {
           <h1 className="text-3xl font-bold mb-2">Analytics</h1>
           <p className="text-muted-foreground">Track your business performance</p>
         </div>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as "week" | "month" | "all")}>
           <TabsList>
             <TabsTrigger value="week" className="gap-2">
               <Calendar className="h-4 w-4" />

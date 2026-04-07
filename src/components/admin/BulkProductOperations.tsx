@@ -422,7 +422,7 @@ export default function BulkProductOperations({
 
     setIsBulkSaving(true);
     try {
-      let updateData: Record<string, any> = {};
+      const updateData: Record<string, string | number | boolean | null> = {};
 
       switch (bulkEditField) {
         case "stock":
@@ -446,7 +446,7 @@ export default function BulkProductOperations({
         case "brand_id":
           updateData.brand_id = bulkEditValue || null;
           break;
-        case "stock_increase":
+        case "stock_increase": {
           // Special handling for stock increase
           for (const id of selectedProducts) {
             const product = products.find((p) => p.id === id);
@@ -464,7 +464,8 @@ export default function BulkProductOperations({
           setBulkEditValue("");
           onRefresh();
           return;
-        case "price_percent":
+        }
+        case "price_percent": {
           // Special handling for percentage price adjustment
           const percent = parseFloat(bulkEditValue) || 0;
           for (const id of selectedProducts) {
@@ -487,6 +488,7 @@ export default function BulkProductOperations({
           setBulkEditValue("");
           onRefresh();
           return;
+        }
       }
 
       if (Object.keys(updateData).length > 0) {

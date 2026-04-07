@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
@@ -75,9 +75,9 @@ export default function Orders() {
     if (user) {
       fetchOrders();
     }
-  }, [user]);
+  }, [user, fetchOrders]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("orders")
@@ -92,7 +92,7 @@ export default function Orders() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const fetchOrderItems = async (orderId: string) => {
     try {

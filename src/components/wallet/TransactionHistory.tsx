@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,9 +24,9 @@ export function TransactionHistory() {
     if (user) {
       fetchTransactions();
     }
-  }, [user]);
+  }, [user, fetchTransactions]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("wallet_transactions")
@@ -42,7 +42,7 @@ export function TransactionHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const isCredit = (type: string) => type === "credit" || type === "referral_bonus";
 

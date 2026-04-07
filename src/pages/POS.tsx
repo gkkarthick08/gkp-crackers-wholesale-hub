@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import {
   cacheProducts, getCachedProducts, savePosOrder, getUnsyncedOrders,
-  markOrderSynced, PosOrder, PosOrderItem
+  markOrderSynced, PosOrder
 } from "@/lib/posDb";
 
 import POSHeader from "@/components/pos/POSHeader";
@@ -88,9 +88,9 @@ export default function POS() {
     getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
   }, [showReceipt]);
 
-  useEffect(() => { loadProducts(); }, [billingMode]);
+  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       if (isOnline) {
@@ -161,7 +161,7 @@ export default function POS() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [billingMode, isOnline]);
 
   const lookupCustomer = async () => {
     if (!customerPhone || customerPhone.length < 10 || !isOnline) return;

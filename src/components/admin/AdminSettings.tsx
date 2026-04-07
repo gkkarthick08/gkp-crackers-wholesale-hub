@@ -3,7 +3,6 @@ import {
   Settings, 
   Store, 
   Bell, 
-  Palette, 
   Shield, 
   Loader2, 
   Save,
@@ -11,7 +10,6 @@ import {
   MapPin,
   Mail,
   Clock,
-  Globe,
   Percent,
   Sparkles,
   Calendar

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,9 +29,9 @@ export function ReferralHistory() {
     if (user) {
       fetchReferrals();
     }
-  }, [user]);
+  }, [user, fetchReferrals]);
 
-  const fetchReferrals = async () => {
+  const fetchReferrals = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("referrals")
@@ -88,7 +88,7 @@ export function ReferralHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   if (isLoading) {
     return (

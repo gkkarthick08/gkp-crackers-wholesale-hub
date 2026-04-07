@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types";
 import {
   Search, Eye, Edit2, Printer, Receipt, Filter,
-  ChevronDown, ChevronUp, Plus, Minus, X, Check, Save,
+  Plus, Minus, X, Save,
   IndianRupee, AlertCircle, CheckCircle2, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -58,11 +58,11 @@ export default function AdminPOSHistory() {
   const [editAmountPaid, setEditAmountPaid] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { settings: posSettings } = usePOSSettings();
+  usePOSSettings(); // Ensures settings are loaded
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -77,7 +77,7 @@ export default function AdminPOSHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const filtered = orders.filter((o) => {
     const q = searchQuery.toLowerCase();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, Loader2, User, Building2, CheckCircle, Clock, Shield, Phone, Mail, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
