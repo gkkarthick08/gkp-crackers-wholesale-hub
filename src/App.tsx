@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
@@ -37,40 +38,42 @@ const AuthGuard = ({ children }: { children: JSX.Element }) => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/quick-order" element={<QuickOrder />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/wholesale" element={<WholesaleCatalog />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/wallet" element={<AuthGuard><Wallet /></AuthGuard>} />
-              <Route path="/orders" element={<AuthGuard><Orders /></AuthGuard>} />
-              <Route path="/account" element={<AuthGuard><Account /></AuthGuard>} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/pos" element={<POS />} />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/quick-order" element={<QuickOrder />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/wholesale" element={<WholesaleCatalog />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/wallet" element={<AuthGuard><Wallet /></AuthGuard>} />
+                <Route path="/orders" element={<AuthGuard><Orders /></AuthGuard>} />
+                <Route path="/account" element={<AuthGuard><Account /></AuthGuard>} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/pos" element={<POS />} />
 
-              {/* ADMIN ROUTES */}
-              <Route path="/admin/*" element={<Admin />} />
+                {/* ADMIN ROUTES */}
+                <Route path="/admin/*" element={<Admin />} />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CartProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
