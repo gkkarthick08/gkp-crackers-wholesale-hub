@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { OrderListSkeleton, OrderDetailsSkeleton } from "@/components/SkeletonLoader";
 
 interface OrderItem {
   id: string;
@@ -206,9 +207,7 @@ export default function Orders() {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <OrderListSkeleton count={5} />
         ) : orders.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
@@ -271,7 +270,10 @@ export default function Orders() {
 
                 {expandedOrder === order.id && (
                   <CardContent className="border-t pt-4">
-                    <div className="space-y-4">
+                    {!order.items ? (
+                      <OrderDetailsSkeleton />
+                    ) : (
+                      <div className="space-y-4">
                       <div className="grid md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Delivery Address</p>
@@ -287,33 +289,27 @@ export default function Orders() {
 
                       <div className="border rounded-lg overflow-hidden">
                         <div className="bg-muted/50 px-4 py-2 font-medium">Estimate Items</div>
-                        {order.items ? (
-                          <div className="divide-y">
-                            {order.items.map((item) => (
-                              <div
-                                key={item.id}
-                                className="px-4 py-3 flex items-center justify-between"
-                              >
-                                <div>
-                                  <p className="font-medium">{item.product_name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {item.product_code} • Qty: {item.quantity}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-semibold">₹{item.total_price}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    ₹{item.unit_price} each
-                                  </p>
-                                </div>
+                        <div className="divide-y">
+                          {order.items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="px-4 py-3 flex items-center justify-between"
+                            >
+                              <div>
+                                <p className="font-medium">{item.product_name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.product_code} • Qty: {item.quantity}
+                                </p>
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="px-4 py-6 text-center">
-                            <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-                          </div>
-                        )}
+                              <div className="text-right">
+                                <p className="font-semibold">₹{item.total_price}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  ₹{item.unit_price} each
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
                       {order.status === "cancelled" && order.cancellation_reason && (
@@ -339,7 +335,8 @@ export default function Orders() {
                           Total: ₹{order.final_amount?.toLocaleString()}
                         </div>
                       </div>
-                    </div>
+                      </div>
+                    )}
                   </CardContent>
                 )}
               </Card>

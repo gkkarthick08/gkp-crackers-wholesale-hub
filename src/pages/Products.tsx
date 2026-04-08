@@ -17,6 +17,7 @@ import { useCart, CartItem } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { ProductGridSkeleton } from "@/components/SkeletonLoader";
 
 interface NormalizedProduct {
   id: string;
@@ -284,17 +285,7 @@ export default function Products() {
 
         {/* Products Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
-            {[...Array(10)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="aspect-square bg-muted rounded-lg mb-3" />
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-muted rounded w-1/2" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ProductGridSkeleton count={10} />
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🧨</div>
