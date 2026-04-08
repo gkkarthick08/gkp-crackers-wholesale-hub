@@ -1,14 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Send, MapPin, User, Phone, Wallet, AlertTriangle, Tag, TrendingDown } from "lucide-react";
+import { ArrowLeft, ShoppingBag, AlertTriangle, TrendingDown } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
@@ -17,6 +12,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { validateCustomerDetails } from "@/lib/validations";
+import CartItemsList from "@/pages/cart/CartItemsList";
+import CartSummary from "@/pages/cart/CartSummary";
+import PaymentSection from "@/pages/cart/PaymentSection";
+import CartCheckout from "@/pages/cart/CartCheckout";
+
+interface CustomerDetails {
+  name: string;
+  phone: string;
+  address: string;
+  notes: string;
+}
 
 export default function Cart() {
   usePageMeta({ title: "Cart — GKP Crackers", description: "Review your cart and place your order." });
@@ -25,7 +31,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [customerDetails, setCustomerDetails] = useState({
+  const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
     name: profile?.full_name || "",
     phone: profile?.phone || "",
     address: profile?.address || "",
@@ -50,7 +56,7 @@ export default function Cart() {
         if (data && data.length > 0) {
           const minOrderSetting = data.find(s => s.key === "minOrderValue");
           const minOrderDealerSetting = data.find(s => s.key === "minOrderValueDealer");
-          
+
           if (isDealer && minOrderDealerSetting?.value) {
             setMinOrderValue(Number(minOrderDealerSetting.value) || 1000);
           } else if (minOrderSetting?.value) {
@@ -84,8 +90,14 @@ export default function Cart() {
   const amountNeeded = minOrderValue - totalAmount;
   const savingsPercentage = totalMrp > 0 ? Math.round((totalSavings / totalMrp) * 100) : 0;
 
+  const handleCustomerDetailsChange = (field: string, value: string) => {
+    setCustomerDetails(prev => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
   const sendToWhatsApp = () => {
-    // Validate customer details using schema
     const validation = validateCustomerDetails(customerDetails);
     if (!validation.success) {
       setFieldErrors(validation.errors);
@@ -118,7 +130,7 @@ export default function Cart() {
     }
     message += `\n━━━━━━━━━━━━━━━━\n`;
     message += `📦 *ORDER DETAILS:*\n\n`;
-    
+
     items.forEach((item, index) => {
       const itemSaving = (item.mrp - item.price) * item.quantity;
       const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
@@ -157,7 +169,6 @@ export default function Cart() {
   };
 
   const placeOrder = async () => {
-    // Validate customer details using schema
     const validation = validateCustomerDetails(customerDetails);
     if (!validation.success) {
       setFieldErrors(validation.errors);
@@ -195,9 +206,9 @@ export default function Cart() {
           .in("id", retailIds);
 
         if (retailProducts) {
-          const isDealer = profile?.user_type === "dealer" && profile?.is_verified;
+          const isDealerVerified = profile?.user_type === "dealer" && profile?.is_verified;
           retailProducts.forEach(p => {
-            priceMap[p.id] = isDealer ? p.wholesale_price : p.retail_price;
+            priceMap[p.id] = isDealerVerified ? p.wholesale_price : p.retail_price;
           });
         }
       }
@@ -281,10 +292,10 @@ export default function Cart() {
 
       if (itemsError) throw itemsError;
 
-      // Bug 6: Block stock after order items inserted
+      // Block stock after order items inserted
       await supabase.rpc("block_stock", { p_order_id: order.id });
 
-      // Deduct wallet balance if used (using secure user_wallet_purchase function)
+      // Deduct wallet balance if used
       if (useWallet && freshWalletDiscount > 0 && user) {
         const { error: walletError } = await supabase.rpc("user_wallet_purchase", {
           order_id: order.id,
@@ -400,290 +411,47 @@ export default function Cart() {
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
-            {items.map(item => {
-              const itemSaving = (item.mrp - item.price) * item.quantity;
-              const discountPercent = Math.round(((item.mrp - item.price) / item.mrp) * 100);
-              const step = item.is_wholesale && item.case_qty ? item.case_qty : 1;
-              const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
-              
-              return (
-                <Card key={item.id} className="shadow-card">
-                  <CardContent className="p-3 sm:p-4">
-                    {/* Mobile: stacked layout */}
-                    <div className="flex gap-3 sm:gap-4">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden relative">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
-                        )}
-                        {discountPercent > 0 && (
-                          <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-1 rounded">
-                            {discountPercent}%
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-sm sm:text-base truncate">{item.name}</h3>
-                            <p className="text-xs text-muted-foreground">Code: {item.product_code}</p>
-                            {item.is_wholesale && item.case_qty && (
-                              <p className="text-xs text-muted-foreground">
-                                {item.case_qty} pcs/case • ₹{item.case_price?.toLocaleString()}/case
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:bg-destructive/10 h-7 w-7 flex-shrink-0"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-muted-foreground line-through">₹{item.mrp}/pc</span>
-                          <span className="font-bold text-primary text-sm">₹{item.price}/pc</span>
-                          {discountPercent > 0 && (
-                            <span className="text-[10px] sm:text-xs text-accent font-medium">
-                              {discountPercent}% OFF
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 sm:h-8 sm:w-8"
-                              onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - step))}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <div className="w-12 sm:w-14 text-center">
-                              <span className="font-semibold text-sm">{item.quantity}</span>
-                              {cases !== null && <p className="text-[9px] text-muted-foreground">{cases} case(s)</p>}
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 sm:h-8 sm:w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity + step)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm sm:text-base">₹{(item.price * item.quantity).toLocaleString()}</p>
-                            {itemSaving > 0 && (
-                              <p className="text-[10px] sm:text-xs text-accent">Save ₹{itemSaving.toLocaleString()}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="lg:col-span-2">
+            <CartItemsList
+              items={items}
+              updateQuantity={updateQuantity}
+              removeItem={removeItem}
+            />
           </div>
 
           {/* Order Summary & Customer Details */}
           <div className="space-y-6">
-            {/* Customer Details */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
-                  Your Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Enter your name"
-                    maxLength={100}
-                    value={customerDetails.name}
-                    onChange={(e) => {
-                      setCustomerDetails(prev => ({ ...prev, name: e.target.value }));
-                      if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: "" }));
-                    }}
-                    className={fieldErrors.name ? "border-destructive" : ""}
-                  />
-                  {fieldErrors.name && (
-                    <p className="text-sm text-destructive">{fieldErrors.name}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      placeholder="+91 XXXXXXXXXX"
-                      className={`pl-10 ${fieldErrors.phone ? "border-destructive" : ""}`}
-                      maxLength={15}
-                      value={customerDetails.phone}
-                      onChange={(e) => {
-                        setCustomerDetails(prev => ({ ...prev, phone: e.target.value }));
-                        if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: "" }));
-                      }}
-                    />
-                  </div>
-                  {fieldErrors.phone && (
-                    <p className="text-sm text-destructive">{fieldErrors.phone}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Delivery Address *</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Textarea
-                      id="address"
-                      placeholder="Enter complete address"
-                      className={`pl-10 min-h-[80px] ${fieldErrors.address ? "border-destructive" : ""}`}
-                      maxLength={500}
-                      value={customerDetails.address}
-                      onChange={(e) => {
-                        setCustomerDetails(prev => ({ ...prev, address: e.target.value }));
-                        if (fieldErrors.address) setFieldErrors(prev => ({ ...prev, address: "" }));
-                      }}
-                    />
-                  </div>
-                  {fieldErrors.address && (
-                    <p className="text-sm text-destructive">{fieldErrors.address}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Order Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any special instructions..."
-                    maxLength={1000}
-                    value={customerDetails.notes}
-                    onChange={(e) => setCustomerDetails(prev => ({ ...prev, notes: e.target.value }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <CartCheckout
+              customerDetails={customerDetails}
+              fieldErrors={fieldErrors}
+              onCustomerDetailsChange={handleCustomerDetailsChange}
+              isSubmitting={isSubmitting}
+              user={user}
+              isMinOrderMet={isMinOrderMet}
+              onPlaceOrder={placeOrder}
+              onSendToWhatsApp={sendToWhatsApp}
+            />
 
-            {/* Wallet Section */}
-            {user && walletBalance > 0 && (
-              <Card className="shadow-card border-primary/20">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Wallet className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Use Wallet Balance</p>
-                        <p className="text-sm text-muted-foreground">
-                          Available: ₹{walletBalance.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={useWallet}
-                      onCheckedChange={setUseWallet}
-                    />
-                  </div>
-                  {useWallet && walletDiscount > 0 && (
-                    <p className="text-sm text-green-600 mt-3">
-                      You'll save ₹{walletDiscount.toFixed(2)} on this order!
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            <PaymentSection
+              user={user}
+              useWallet={useWallet}
+              onUseWalletChange={setUseWallet}
+              walletBalance={walletBalance}
+              walletDiscount={walletDiscount}
+            />
 
-            {/* Order Estimate Summary */}
-            <Card className="shadow-card border-primary/20">
-              <CardHeader>
-                <CardTitle>Order Estimate Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Total Items</span>
-                  <span>{totalItems}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>MRP Total</span>
-                  <span className="line-through">₹{totalMrp.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Sale Price</span>
-                  <span>₹{totalAmount.toLocaleString()}</span>
-                </div>
-                {totalSavings > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
-                    <span className="flex items-center gap-1">
-                      <Tag className="h-4 w-4" />
-                      Your Savings
-                    </span>
-                    <span>-₹{totalSavings.toLocaleString()} ({savingsPercentage}%)</span>
-                  </div>
-                )}
-                {walletDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Wallet Discount</span>
-                    <span>-₹{walletDiscount.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="border-t border-border pt-4">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total to Pay</span>
-                    <span className="text-gradient-hero">₹{finalAmount.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {!isMinOrderMet && (
-                  <div className="bg-destructive/10 rounded-xl p-4 text-sm text-destructive">
-                    ⚠️ Minimum order: ₹{minOrderValue.toLocaleString()}. Add ₹{amountNeeded.toLocaleString()} more.
-                  </div>
-                )}
-
-                <div className="bg-muted/50 rounded-xl p-4 text-sm text-muted-foreground">
-                  ⚠️ This is an estimate. Final price will be confirmed.
-                </div>
-
-                <div className="space-y-3">
-                  {user ? (
-                    <Button 
-                      variant="hero" 
-                      size="lg" 
-                      className="w-full"
-                      onClick={placeOrder}
-                      disabled={isSubmitting || !isMinOrderMet}
-                    >
-                      {isSubmitting ? "Submitting Estimate..." : "Submit Order Estimate"}
-                    </Button>
-                  ) : (
-                    <Link to="/auth" className="block">
-                      <Button variant="hero" size="lg" className="w-full">
-                        Login to Submit Estimate
-                      </Button>
-                    </Link>
-                  )}
-                  
-                  <Button 
-                    variant="whatsapp" 
-                    size="lg" 
-                    className="w-full gap-2"
-                    onClick={sendToWhatsApp}
-                    disabled={!isMinOrderMet}
-                  >
-                    <Send className="h-5 w-5" />
-                    Send via WhatsApp
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <CartSummary
+              totalItems={totalItems}
+              totalMrp={totalMrp}
+              totalAmount={totalAmount}
+              totalSavings={totalSavings}
+              savingsPercentage={savingsPercentage}
+              walletDiscount={walletDiscount}
+              finalAmount={finalAmount}
+              minOrderValue={minOrderValue}
+              amountNeeded={amountNeeded}
+              isMinOrderMet={isMinOrderMet}
+            />
           </div>
         </div>
       </main>
