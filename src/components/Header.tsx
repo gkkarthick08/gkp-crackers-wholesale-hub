@@ -17,7 +17,7 @@ import logo from "@/assets/logo.png";
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, profile, isAdmin, isVerifiedDealer, signOut } = useAuth();
+  const { user, profile, isAdmin, isStaff, isVerifiedDealer, signOut } = useAuth();
   const { totalItems } = useCart();
 
   const navigation = useMemo(() => {
@@ -76,6 +76,18 @@ export default function Header() {
               }`}
             >
               Admin
+            </Link>
+          )}
+          {(isAdmin || isStaff) && (
+            <Link
+              to="/pos"
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                location.pathname === "/pos"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              POS
             </Link>
           )}
         </div>
@@ -144,6 +156,14 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {(isAdmin || isStaff) && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/pos" className="cursor-pointer">
+                      <Package className="h-4 w-4 mr-2" />
+                      POS System
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />
@@ -200,6 +220,15 @@ export default function Header() {
                 className="block px-4 py-3 rounded-lg font-medium gradient-dealer text-white"
               >
                 Admin Panel
+              </Link>
+            )}
+            {(isAdmin || isStaff) && (
+              <Link
+                to="/pos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 rounded-lg font-medium bg-accent/10 text-accent-foreground"
+              >
+                POS System
               </Link>
             )}
           </div>

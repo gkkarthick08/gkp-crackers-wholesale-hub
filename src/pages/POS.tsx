@@ -230,7 +230,7 @@ export default function POS() {
     const { data: posOrder, error: posErr } = await supabase.from("pos_orders").insert([{
       customer_name: order.customer_name,
       customer_phone: order.customer_phone || null,
-      customer_address: customerAddress || null,
+      customer_address: order.customer_address || null,
       billing_mode: order.billing_mode,
       payment_method: order.payment_method,
       total_amount: order.total_amount,
@@ -269,7 +269,7 @@ export default function POS() {
       customer_id: user?.id || null,
       customer_name: order.customer_name,
       customer_phone: order.customer_phone || "POS",
-      customer_address: customerAddress || "POS - In-Store",
+      customer_address: order.customer_address || "POS - In-Store",
       notes: `POS ${order.billing_mode} | ${order.payment_method}`,
       total_items: order.items.reduce((s, i) => s + i.quantity, 0),
       total_amount: order.total_amount,
@@ -302,6 +302,7 @@ export default function POS() {
       created_at: new Date().toISOString(),
       customer_name: customerName || "Walk-in Customer",
       customer_phone: customerPhone || "",
+      customer_address: customerAddress || "",
       items: cart.map((i) => ({
         product_id: i.is_wholesale ? null : i.id,
         product_code: i.product_code,

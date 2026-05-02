@@ -118,7 +118,9 @@ export default function AdminPOSHistory() {
       const mrpTotal = editItems.reduce((s, i) => s + i.mrp * i.quantity, 0);
       const newTotal = Math.round(saleTotal + (selectedOrder.packing_charges || 0) + (selectedOrder.delivery_charges || 0));
       const balanceDue = Math.max(0, newTotal - editAmountPaid);
-      const paymentStatus = editAmountPaid >= newTotal ? "paid" : editAmountPaid > 0 ? "partial" : "pending";
+      // Honor admin's manual status if it differs from auto-derived; else compute from amount
+      const autoStatus = editAmountPaid >= newTotal ? "paid" : editAmountPaid > 0 ? "partial" : "pending";
+      const paymentStatus = editPaymentStatus || autoStatus;
 
       // Update order
       const { error: orderErr } = await supabase.from("pos_orders").update({
@@ -164,7 +166,10 @@ export default function AdminPOSHistory() {
 
   const printBill = (order: PosOrderRow) => {
     openOrder(order);
-    setTimeout(() => window.print(), 500);
+    // Wait for radix dialog portal to render before invoking print
+    setTimeout(() => {
+      requestAnimationFrame(() => window.print());
+    }, 600);
   };
 
   const totalRevenue = orders.reduce((s, o) => s + o.total_amount, 0);
