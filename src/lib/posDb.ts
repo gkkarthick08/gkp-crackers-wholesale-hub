@@ -22,6 +22,7 @@ export interface PosOrder {
   created_at: string;
   customer_name: string;
   customer_phone: string;
+  customer_address?: string;
   items: PosOrderItem[];
   total_amount: number;
   mrp_total: number;
