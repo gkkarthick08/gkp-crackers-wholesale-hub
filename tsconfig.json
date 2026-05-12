@@ -15,7 +15,7 @@
         "./src/*"
       ]
     },
-    "skipLibCheck": false
+    "skipLibCheck": true
   },
   "files": [],
   "references": [
