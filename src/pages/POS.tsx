@@ -76,19 +76,6 @@ export default function POS() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Online/offline
-  useEffect(() => {
-    const goOnline = () => setIsOnline(true);
-    const goOffline = () => setIsOnline(false);
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
-    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
-  }, []);
-
-  useEffect(() => {
-    getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
-  }, [showReceipt]);
-
-  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
 
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
@@ -96,7 +83,7 @@ export default function POS() {
       if (isOnline) {
         if (billingMode === "wholesale") {
           const { data } = await supabase
-            .from<WholesaleProductRow>("wholesale_products")
+            .from("wholesale_products")
             .select("*, category:categories(name), brand:brands(name)")
             .eq("is_visible", true)
             .order("name");
@@ -122,7 +109,7 @@ export default function POS() {
           }
         } else {
           const { data } = await supabase
-            .from<RetailProductRow>("products")
+            .from("products")
             .select("*, category:categories(name), brand:brands(name)")
             .eq("is_visible", true)
             .order("name");
@@ -162,6 +149,20 @@ export default function POS() {
       setIsLoading(false);
     }
   }, [billingMode, isOnline]);
+
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
+  }, []);
+
+  useEffect(() => {
+    getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
+  }, [showReceipt]);
+
+  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
 
   const lookupCustomer = async () => {
     if (!customerPhone || customerPhone.length < 10 || !isOnline) return;

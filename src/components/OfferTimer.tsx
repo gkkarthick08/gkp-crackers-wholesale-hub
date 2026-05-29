@@ -41,20 +41,19 @@ export default function OfferTimer() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          const loadedSettings: Partial<CountdownSettings> = {};
+          const loadedSettings: Record<string, unknown> = {};
           data.forEach((item) => {
             if (item.key in settings) {
-              // Type-safe assignment based on the key
               const key = item.key as keyof CountdownSettings;
               const defaultValue = settings[key];
               if (typeof defaultValue === "boolean") {
-                loadedSettings[key] = (item.value === "true" || item.value === true) as CountdownSettings[typeof key];
+                loadedSettings[key] = item.value === "true" || item.value === true;
               } else {
-                loadedSettings[key] = item.value as CountdownSettings[typeof key];
+                loadedSettings[key] = item.value;
               }
             }
           });
-          setSettings((prev) => ({ ...prev, ...loadedSettings }));
+          setSettings((prev) => ({ ...prev, ...(loadedSettings as Partial<CountdownSettings>) }));
         }
       } catch (error) {
         console.error("Error fetching countdown settings:", error);

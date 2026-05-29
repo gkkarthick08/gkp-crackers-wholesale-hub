@@ -72,11 +72,6 @@ export default function Orders() {
   const [isCancelling, setIsCancelling] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-    }
-  }, [user, fetchOrders]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -94,6 +89,12 @@ export default function Orders() {
       setIsLoading(false);
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [user, fetchOrders]);
 
   const fetchOrderItems = async (orderId: string) => {
     try {

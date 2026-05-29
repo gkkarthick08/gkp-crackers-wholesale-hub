@@ -93,22 +93,21 @@ export default function AdminSettings() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          const loadedSettings: Partial<SiteSettings> = {};
+          const loadedSettings: Record<string, unknown> = {};
           data.forEach((item) => {
             if (item.key in defaultSettings) {
-              // Type-safe assignment based on the key
               const key = item.key as keyof SiteSettings;
               const defaultValue = defaultSettings[key];
               if (typeof defaultValue === "boolean") {
-                loadedSettings[key] = (item.value === "true" || item.value === true) as SiteSettings[typeof key];
+                loadedSettings[key] = item.value === "true" || item.value === true;
               } else if (typeof defaultValue === "number") {
-                loadedSettings[key] = Number(item.value) as SiteSettings[typeof key];
+                loadedSettings[key] = Number(item.value);
               } else {
-                loadedSettings[key] = item.value as SiteSettings[typeof key];
+                loadedSettings[key] = item.value;
               }
             }
           });
-          setSettings({ ...defaultSettings, ...loadedSettings });
+          setSettings({ ...defaultSettings, ...(loadedSettings as Partial<SiteSettings>) });
         }
       } catch (error) {
         console.error("Error fetching settings:", error);

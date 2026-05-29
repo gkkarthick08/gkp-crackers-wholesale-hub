@@ -60,17 +60,15 @@ export default function AdminPOSHistory() {
   const { toast } = useToast();
   usePOSSettings(); // Ensures settings are loaded
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
-
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from<PosOrderRow>("pos_orders")
+        .from("pos_orders")
         .select("*, pos_order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data || []) as unknown as PosOrderRow[]);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error");
       toast({ title: "Error loading bills", description: error.message, variant: "destructive" });
@@ -78,6 +76,8 @@ export default function AdminPOSHistory() {
       setIsLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const filtered = orders.filter((o) => {
     const q = searchQuery.toLowerCase();

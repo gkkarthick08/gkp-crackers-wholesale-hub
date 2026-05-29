@@ -53,14 +53,13 @@ export function usePOSSettings() {
           .select("key, value")
           .like("key", "pos%");
         if (data && data.length > 0) {
-          const loaded: Partial<POSSettings> = {};
+          const loaded: Record<string, unknown> = {};
           data.forEach((item) => {
             if (item.key in defaultPOSSettings) {
-              const key = item.key as keyof POSSettings;
-              loaded[key] = item.value as POSSettings[typeof key];
+              loaded[item.key] = item.value;
             }
           });
-          setSettings((prev) => ({ ...prev, ...loaded }));
+          setSettings((prev) => ({ ...prev, ...(loaded as Partial<POSSettings>) }));
         }
       } catch (err) {
         console.error("Error fetching POS settings:", err);
@@ -84,18 +83,17 @@ export default function AdminPOSSettings() {
     const fetchSettings = async () => {
       try {
         const { data } = await supabase
-          .from<Database["public"]["Tables"]["site_settings"]["Row"]>("site_settings")
+          .from("site_settings")
           .select("key, value")
           .like("key", "pos%");
         if (data && data.length > 0) {
-          const loaded: Partial<POSSettings> = {};
+          const loaded: Record<string, unknown> = {};
           data.forEach((item) => {
             if (item.key in defaultPOSSettings) {
-              const key = item.key as keyof POSSettings;
-              loaded[key] = item.value as POSSettings[typeof key];
+              loaded[item.key] = item.value;
             }
           });
-          setSettings((prev) => ({ ...prev, ...loaded }));
+          setSettings((prev) => ({ ...prev, ...(loaded as Partial<POSSettings>) }));
         }
       } catch (err) {
         console.error("Error fetching POS settings:", err);

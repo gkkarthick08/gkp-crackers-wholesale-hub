@@ -25,11 +25,6 @@ export function ReferralHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, claimed: 0, pending: 0, earnings: 0 });
 
-  useEffect(() => {
-    if (user) {
-      fetchReferrals();
-    }
-  }, [user, fetchReferrals]);
 
   const fetchReferrals = useCallback(async () => {
     try {
@@ -89,6 +84,12 @@ export function ReferralHistory() {
       setIsLoading(false);
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (user) {
+      fetchReferrals();
+    }
+  }, [user, fetchReferrals]);
 
   if (isLoading) {
     return (
