@@ -62,7 +62,7 @@ export default function AdminSEO() {
       const { error } = await supabase
         .from("public_settings")
         .upsert(
-          { key: "seo_settings", value: seo as Json, updated_at: new Date().toISOString() },
+          { key: "seo_settings", value: seo as unknown as Json, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         );
       if (error) throw error;
