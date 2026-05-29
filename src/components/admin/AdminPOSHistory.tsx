@@ -66,7 +66,7 @@ export default function AdminPOSHistory() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from<PosOrderRow>("pos_orders")
+        .from("pos_orders")
         .select("*, pos_order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;

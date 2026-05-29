@@ -81,7 +81,7 @@ export default function QuickOrder() {
 
         if (isVerifiedDealer) {
           const res = await supabase
-            .from<WholesaleProductRecord>("wholesale_products")
+            .from("wholesale_products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order");
@@ -108,7 +108,7 @@ export default function QuickOrder() {
           }
         } else {
           const res = await supabase
-            .from<RetailProductRecord>("products")
+            .from("products")
             .select(`*, category:categories(name), brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order");

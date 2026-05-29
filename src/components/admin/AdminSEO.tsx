@@ -60,7 +60,7 @@ export default function AdminSEO() {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from<PublicSettingRow>("public_settings")
+        .from("public_settings")
         .upsert(
           { key: "seo_settings", value: seo as Json, updated_at: new Date().toISOString() },
           { onConflict: "key" }

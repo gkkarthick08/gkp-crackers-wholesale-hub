@@ -84,7 +84,7 @@ export default function AdminPOSSettings() {
     const fetchSettings = async () => {
       try {
         const { data } = await supabase
-          .from<Database["public"]["Tables"]["site_settings"]["Row"]>("site_settings")
+          .from("site_settings")
           .select("key, value")
           .like("key", "pos%");
         if (data && data.length > 0) {
