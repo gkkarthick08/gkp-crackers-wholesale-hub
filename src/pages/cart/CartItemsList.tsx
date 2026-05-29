@@ -9,8 +9,8 @@ interface CartItem {
   price: number;
   mrp: number;
   quantity: number;
-  image_url?: string;
-  is_wholesale: boolean;
+  image_url?: string | null;
+  is_wholesale?: boolean;
   case_qty?: number;
   case_price?: number;
 }

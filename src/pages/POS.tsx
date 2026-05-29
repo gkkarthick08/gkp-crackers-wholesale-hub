@@ -88,7 +88,7 @@ export default function POS() {
             .eq("is_visible", true)
             .order("name");
           if (data) {
-            const mapped = data.map((p) => ({
+            const mapped: PosProduct[] = data.map((p) => ({
               id: p.id,
               product_code: p.product_code,
               name: p.name,
@@ -114,7 +114,7 @@ export default function POS() {
             .eq("is_visible", true)
             .order("name");
           if (data) {
-            const mapped = data.map((p) => ({
+            const mapped: PosProduct[] = data.map((p) => ({
               id: p.id,
               product_code: p.product_code,
               name: p.name,
@@ -125,8 +125,6 @@ export default function POS() {
               category_name: p.category?.name || "",
               brand_name: p.brand?.name || "",
               is_wholesale: false,
-              case_qty: p.case_qty,
-              case_price: p.case_price,
             }));
             setProducts(mapped);
             const storeName: "products" | "wholesale_products" = "products";
@@ -136,14 +134,14 @@ export default function POS() {
         }
       } else {
         const storeName: "products" | "wholesale_products" = billingMode === "wholesale" ? "wholesale_products" : "products";
-        const cached = await getCachedProducts(storeName);
+        const cached = await getCachedProducts<PosProduct>(storeName);
         setProducts(cached);
         setCategories([...new Set(cached.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
       }
     } catch (err) {
       console.error("Error loading POS products:", err);
       const storeName: "products" | "wholesale_products" = billingMode === "wholesale" ? "wholesale_products" : "products";
-      const cached = await getCachedProducts(storeName);
+      const cached = await getCachedProducts<PosProduct>(storeName);
       setProducts(cached);
     } finally {
       setIsLoading(false);
