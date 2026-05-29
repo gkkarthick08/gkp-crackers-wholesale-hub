@@ -94,8 +94,8 @@ export default function Header() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-1.5 sm:gap-3">
-          <Link to="/cart" className="relative">
-            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+          <Link to="/cart" className="relative" aria-label={`Estimate cart${totalItems > 0 ? ` (${totalItems} items)` : ""}`}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10" aria-hidden="true" tabIndex={-1}>
               <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             {totalItems > 0 && (
@@ -177,7 +177,7 @@ export default function Header() {
                 <User className="h-4 w-4" />
                 Login / Signup
               </Button>
-              <Button variant="hero" size="icon" className="sm:hidden">
+              <Button variant="hero" size="icon" className="sm:hidden" aria-label="Login or sign up">
                 <User className="h-4 w-4" />
               </Button>
             </Link>
@@ -189,6 +189,8 @@ export default function Header() {
             size="icon"
             className="lg:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>

@@ -130,7 +130,7 @@ export default function Admin() {
           <img src={logo} alt="GKP" className="h-8 w-8 rounded-lg" />
           <span className="font-bold text-gradient-hero">Admin</span>
         </Link>
-        <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? "Close admin menu" : "Open admin menu"} aria-expanded={sidebarOpen}>
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
