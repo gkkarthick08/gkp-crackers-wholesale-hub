@@ -76,19 +76,6 @@ export default function POS() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Online/offline
-  useEffect(() => {
-    const goOnline = () => setIsOnline(true);
-    const goOffline = () => setIsOnline(false);
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
-    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
-  }, []);
-
-  useEffect(() => {
-    getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
-  }, [showReceipt]);
-
-  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
 
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
@@ -162,6 +149,20 @@ export default function POS() {
       setIsLoading(false);
     }
   }, [billingMode, isOnline]);
+
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
+  }, []);
+
+  useEffect(() => {
+    getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
+  }, [showReceipt]);
+
+  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
 
   const lookupCustomer = async () => {
     if (!customerPhone || customerPhone.length < 10 || !isOnline) return;

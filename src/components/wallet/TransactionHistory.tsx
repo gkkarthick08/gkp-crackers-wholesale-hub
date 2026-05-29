@@ -20,11 +20,6 @@ export function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-    }
-  }, [user, fetchTransactions]);
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -43,6 +38,12 @@ export function TransactionHistory() {
       setIsLoading(false);
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+    }
+  }, [user, fetchTransactions]);
 
   const isCredit = (type: string) => type === "credit" || type === "referral_bonus";
 
