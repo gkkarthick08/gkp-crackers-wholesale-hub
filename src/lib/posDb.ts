@@ -57,7 +57,7 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function cacheProducts(products: (Database["public"]["Tables"]["products"]["Row"] | Database["public"]["Tables"]["wholesale_products"]["Row"])[], storeName: "products" | "wholesale_products") {
+export async function cacheProducts<T extends { id: string }>(products: T[], storeName: "products" | "wholesale_products") {
   const db = await openDb();
   const tx = db.transaction(storeName, "readwrite");
   const store = tx.objectStore(storeName);
@@ -69,13 +69,13 @@ export async function cacheProducts(products: (Database["public"]["Tables"]["pro
   });
 }
 
-export async function getCachedProducts(storeName: "products" | "wholesale_products"): Promise<(Database["public"]["Tables"]["products"]["Row"] | Database["public"]["Tables"]["wholesale_products"]["Row"])[]> {
+export async function getCachedProducts<T = unknown>(storeName: "products" | "wholesale_products"): Promise<T[]> {
   const db = await openDb();
   const tx = db.transaction(storeName, "readonly");
   const store = tx.objectStore(storeName);
   return new Promise((resolve, reject) => {
     const req = store.getAll();
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => resolve(req.result as T[]);
     req.onerror = () => reject(req.error);
   });
 }
