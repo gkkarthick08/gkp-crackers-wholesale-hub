@@ -60,7 +60,7 @@ export default function OfferTimer() {
           data.forEach((item) => {
             if (countdownSettingKeys.includes(item.key as CountdownSettingKey)) {
               const key = item.key as CountdownSettingKey;
-              loadedSettings[key] = parseCountdownSetting(key, item.value);
+              Object.assign(loadedSettings, { [key]: parseCountdownSetting(key, item.value) });
             }
           });
           setSettings((prev) => ({ ...prev, ...loadedSettings }));
