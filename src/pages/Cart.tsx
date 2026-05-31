@@ -478,7 +478,7 @@ export default function Cart() {
       const notificationMessage = `🎉 *NEW ORDER PLACED!*\n\n👤 Customer: ${customerDetails.name}\n📞 Phone: ${customerDetails.phone}\n📍 Address: ${customerDetails.address}\n\n📦 Order #${order.order_number}\n💰 Amount: ₹${freshFinal.toLocaleString()}\n\nCheck admin panel for details.`;
       
       try {
-        await supabase.rpc("send_whatsapp_notification", {
+        await (supabase.rpc as any)("send_whatsapp_notification", {
           p_phone: settings.storeWhatsApp,
           p_message: notificationMessage,
           p_order_id: order.id
