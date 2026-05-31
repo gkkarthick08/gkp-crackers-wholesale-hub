@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { ThemeProvider } from "next-themes";
 import App from "./App.tsx";
 import "./index.css";
 
@@ -24,10 +25,8 @@ You can copy .env.example and fill in your actual values.
 For more information, see the README.md file.
     `.trim();
 
-    // Log to console for debugging
     console.error(errorMessage);
 
-    // Show error in the DOM
     const rootElement = document.getElementById("root");
     if (rootElement) {
       rootElement.innerHTML = `
@@ -55,18 +54,16 @@ For more information, see the README.md file.
       `;
     }
 
-    // Throw error to prevent app from starting
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
-
-  // Environment variables are valid, continue with app startup
 };
 
-// Validate environment variables before starting the app
 validateEnvironmentVariables();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 );

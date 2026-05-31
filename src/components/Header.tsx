@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet, Package } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Settings, Sparkles, Wallet, Package, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useTheme } from "next-themes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ export default function Header() {
   const location = useLocation();
   const { user, profile, isAdmin, isVerifiedDealer, signOut } = useAuth();
   const { totalItems } = useCart();
+  const { theme, setTheme } = useTheme();
 
   const navigation = useMemo(() => {
     const items = [
@@ -26,7 +28,6 @@ export default function Header() {
       { name: "Quick Order", href: "/quick-order" },
       { name: "Products", href: "/products" },
     ];
-    // Only show Wholesale link to verified dealers
     if (isVerifiedDealer) {
       items.push({ name: "Wholesale", href: "/wholesale" });
     }
@@ -82,6 +83,23 @@ export default function Header() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-1.5 sm:gap-3">
+
+          {/* Dark/Light Mode Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
+            ) : (
+              <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
+            )}
+          </Button>
+
+          {/* Cart */}
           <Link to="/cart" className="relative">
             <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
               <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
