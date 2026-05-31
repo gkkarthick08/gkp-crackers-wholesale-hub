@@ -47,11 +47,8 @@ export default function AdminReferrals() {
   });
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchReferrals();
-  }, [fetchReferrals]);
-
   const fetchReferrals = useCallback(async () => {
+
     try {
       setIsLoading(true);
       
