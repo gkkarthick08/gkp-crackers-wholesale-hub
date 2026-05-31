@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingBag, AlertTriangle, TrendingDown } from "lucide-react";
 import Header from "@/components/Header";
@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useSiteSettings, formatWhatsAppUrl } from "@/hooks/useSiteSettings";
 import { validateCustomerDetails } from "@/lib/validations";
 import CartItemsList from "@/pages/cart/CartItemsList";
 import CartSummary from "@/pages/cart/CartSummary";
@@ -40,36 +41,8 @@ export default function Cart() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [useWallet, setUseWallet] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [minOrderValue, setMinOrderValue] = useState(500);
-
+  const { settings } = useSiteSettings();
   const isDealer = profile?.user_type === "dealer";
-
-  // Fetch min order value from settings
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data } = await supabase
-          .from("site_settings")
-          .select("key, value")
-          .in("key", ["minOrderValue", "minOrderValueDealer"]);
-
-        if (data && data.length > 0) {
-          const minOrderSetting = data.find(s => s.key === "minOrderValue");
-          const minOrderDealerSetting = data.find(s => s.key === "minOrderValueDealer");
-
-          if (isDealer && minOrderDealerSetting?.value) {
-            setMinOrderValue(Number(minOrderDealerSetting.value) || 1000);
-          } else if (minOrderSetting?.value) {
-            setMinOrderValue(Number(minOrderSetting.value) || 500);
-          }
-        }
-      } catch (_error) {
-        console.error("Error fetching settings:", _error);
-      }
-    };
-
-    fetchSettings();
-  }, [isDealer]);
 
   // Update customer details when profile changes
   useEffect(() => {
@@ -86,8 +59,10 @@ export default function Cart() {
   const walletBalance = profile?.wallet_balance || 0;
   const walletDiscount = useWallet ? Math.min(walletBalance, totalAmount) : 0;
   const finalAmount = totalAmount - walletDiscount;
+  const minOrderValue = isDealer ? settings.minOrderValueDealer : settings.minOrderValue;
   const isMinOrderMet = totalAmount >= minOrderValue;
   const amountNeeded = minOrderValue - totalAmount;
+  const walletEnabled = settings.enableWallet;
   const savingsPercentage = totalMrp > 0 ? Math.round((totalSavings / totalMrp) * 100) : 0;
 
   const handleCustomerDetailsChange = (field: string, value: string) => {
@@ -159,13 +134,20 @@ export default function Cart() {
     message += `💵 *FINAL TOTAL:* ₹${finalAmount.toLocaleString()}\n\n`;
     message += `⚠️ _This is an estimate. Final price may vary._`;
 
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/918610153961?text=${encodedMessage}`, "_blank");
-
-    toast({
-      title: "Order sent to WhatsApp!",
-      description: "We'll contact you shortly to confirm your order.",
-    });
+    const whatsappLink = formatWhatsAppUrl(settings.storeWhatsApp, message);
+    if (whatsappLink) {
+      window.open(whatsappLink, "_blank");
+      toast({
+        title: "Order sent to WhatsApp!",
+        description: "We'll contact you shortly to confirm your order.",
+      });
+    } else {
+      toast({
+        title: "Unable to open WhatsApp",
+        description: "Please check the store WhatsApp number in settings.",
+        variant: "destructive"
+      });
+    }
   };
 
   const placeOrder = async () => {
@@ -438,6 +420,7 @@ export default function Cart() {
               onUseWalletChange={setUseWallet}
               walletBalance={walletBalance}
               walletDiscount={walletDiscount}
+              walletEnabled={walletEnabled}
             />
 
             <CartSummary

@@ -8,6 +8,7 @@ interface PaymentSectionProps {
   onUseWalletChange: (checked: boolean) => void;
   walletBalance: number;
   walletDiscount: number;
+  walletEnabled: boolean;
 }
 
 export default function PaymentSection({
@@ -16,8 +17,9 @@ export default function PaymentSection({
   onUseWalletChange,
   walletBalance,
   walletDiscount,
+  walletEnabled,
 }: PaymentSectionProps) {
-  if (!user || walletBalance <= 0) {
+  if (!user || walletBalance <= 0 || !walletEnabled) {
     return null;
   }
 

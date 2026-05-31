@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useSiteSettings, formatTelLink, formatWhatsAppUrl } from "@/hooks/useSiteSettings";
 
 export default function Footer() {
+  const { settings } = useSiteSettings();
   return (
     <footer className="gradient-dark py-10 sm:py-16">
       <div className="container mx-auto px-4">
@@ -55,14 +57,14 @@ export default function Footer() {
               Contact Us
             </h4>
             <ul className="space-y-3 text-white/70">
-              <li>📍 Sivakasi, Tamil Nadu</li>
+              <li>📍 {settings.storeAddress}</li>
               <li>
-                <a href="tel:+918610153961" className="hover:text-secondary transition-colors">
-                  📞 +91 8610153961
+                <a href={formatTelLink(settings.storePhone)} className="hover:text-secondary transition-colors">
+                  📞 {settings.storePhone}
                 </a>
               </li>
               <li>
-                <a href="https://wa.me/918610153961" className="hover:text-secondary transition-colors">
+                <a href={formatWhatsAppUrl(settings.storeWhatsApp)} className="hover:text-secondary transition-colors">
                   💬 WhatsApp Us
                 </a>
               </li>

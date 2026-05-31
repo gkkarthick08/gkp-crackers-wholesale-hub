@@ -1,9 +1,14 @@
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSiteSettings, formatTelLink, formatWhatsAppUrl } from "@/hooks/useSiteSettings";
 
 export default function StoreLocation() {
+  const { settings } = useSiteSettings();
   const openWhatsApp = () => {
-    window.open("https://wa.me/918610153961?text=Hi, I would like to inquire about crackers", "_blank");
+    const whatsappLink = formatWhatsAppUrl(settings.storeWhatsApp, "Hi, I would like to inquire about crackers");
+    if (whatsappLink) {
+      window.open(whatsappLink, "_blank");
+    }
   };
 
   return (
@@ -47,7 +52,7 @@ export default function StoreLocation() {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-1">Address</h4>
-                  <p className="text-muted-foreground">Sivakasi, Tamil Nadu, India</p>
+                  <p className="text-muted-foreground">{settings.storeAddress}</p>
                 </div>
               </div>
 
@@ -57,8 +62,8 @@ export default function StoreLocation() {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-1">Phone</h4>
-                  <a href="tel:+918610153961" className="text-muted-foreground hover:text-primary transition-colors">
-                    +91 8610153961
+                  <a href={formatTelLink(settings.storePhone)} className="text-muted-foreground hover:text-primary transition-colors">
+                    {settings.storePhone}
                   </a>
                 </div>
               </div>
@@ -68,8 +73,10 @@ export default function StoreLocation() {
                   <Mail className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-1">GST Number</h4>
-                  <p className="text-muted-foreground">33GKPPK8032R</p>
+                  <h4 className="font-semibold mb-1">Email</h4>
+                  <a href={`mailto:${settings.storeEmail}`} className="text-muted-foreground hover:text-primary transition-colors">
+                    {settings.storeEmail}
+                  </a>
                 </div>
               </div>
 
@@ -79,7 +86,7 @@ export default function StoreLocation() {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-1">Business Hours</h4>
-                  <p className="text-muted-foreground">Mon - Sat: 9:00 AM - 8:00 PM</p>
+                  <p className="text-muted-foreground">{settings.storeTimings}</p>
                 </div>
               </div>
             </div>

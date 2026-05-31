@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
+import { useSiteSettings, formatWhatsAppUrl } from "@/hooks/useSiteSettings";
 
 export default function FloatingButtons() {
+  const { settings } = useSiteSettings();
   const openWhatsApp = () => {
-    window.open("https://wa.me/918610153961?text=Hi, I would like to inquire about crackers", "_blank");
+    const whatsappLink = formatWhatsAppUrl(settings.storeWhatsApp, "Hi, I would like to inquire about crackers");
+    if (whatsappLink) {
+      window.open(whatsappLink, "_blank");
+    }
   };
 
   return (

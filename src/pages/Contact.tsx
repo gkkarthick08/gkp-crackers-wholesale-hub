@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useSiteSettings, formatTelLink, formatWhatsAppUrl } from "@/hooks/useSiteSettings";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -20,30 +21,30 @@ const contactSchema = z.object({
   message: z.string().min(10, "Message must be at least 10 characters").max(1000),
 });
 
-const contactInfo = [
-  {
-    icon: MapPin,
-    title: "Address",
-    details: ["GKP Crackers", "123 Main Street, Sivakasi", "Tamil Nadu - 626123"]
-  },
-  {
-    icon: Phone,
-    title: "Phone",
-    details: ["+91 86101 53961", "+91 98765 43210"]
-  },
-  {
-    icon: Mail,
-    title: "Email",
-    details: ["sales@gkpcrackers.com", "support@gkpcrackers.com"]
-  },
-  {
-    icon: Clock,
-    title: "Business Hours",
-    details: ["Mon - Sat: 9:00 AM - 8:00 PM", "Sunday: 10:00 AM - 6:00 PM"]
-  }
-];
-
 export default function Contact() {
+  const { settings } = useSiteSettings();
+  const contactInfo = [
+    {
+      icon: MapPin,
+      title: "Address",
+      details: [settings.storeName, settings.storeAddress]
+    },
+    {
+      icon: Phone,
+      title: "Phone",
+      details: [settings.storePhone]
+    },
+    {
+      icon: Mail,
+      title: "Email",
+      details: [settings.storeEmail]
+    },
+    {
+      icon: Clock,
+      title: "Business Hours",
+      details: [settings.storeTimings]
+    }
+  ];
   usePageMeta({ title: "Contact Us — GKP Crackers", description: "Get in touch with GKP Crackers Sivakasi. Call, WhatsApp, or send us a message." });
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,11 +100,6 @@ export default function Contact() {
 
       if (error) throw error;
 
-      // Also open WhatsApp
-      const message = `*New Contact Form Submission*\n\n👤 Name: ${formData.name}\n📧 Email: ${formData.email}\n📞 Phone: ${formData.phone}\n\n💬 Message:\n${formData.message}`;
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/918610153961?text=${encodedMessage}`, "_blank");
-
       toast({
         title: "Message Sent!",
         description: "We've received your message and will get back to you soon.",
@@ -114,8 +110,10 @@ export default function Contact() {
       console.error("Contact form error:", err);
       // Fallback to WhatsApp only
       const message = `*New Contact Form Submission*\n\n👤 Name: ${formData.name}\n📧 Email: ${formData.email}\n📞 Phone: ${formData.phone}\n\n💬 Message:\n${formData.message}`;
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/918610153961?text=${encodedMessage}`, "_blank");
+      const whatsappLink = formatWhatsAppUrl(settings.storeWhatsApp, message);
+      if (whatsappLink) {
+        window.open(whatsappLink, "_blank");
+      }
       toast({ title: "Message sent via WhatsApp", description: "We'll get back to you soon." });
       setFormData({ name: "", email: "", phone: "", message: "" });
     } finally {
@@ -294,24 +292,24 @@ export default function Contact() {
                 <div className="grid grid-cols-2 gap-4">
                   <Card className="shadow-card">
                     <CardContent className="pt-6 text-center">
-                      <a 
-                        href="tel:+918610153961" 
+                      <a
+                        href={formatTelLink(settings.storePhone)}
                         className="block hover:opacity-80 transition-opacity"
                       >
                         <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mx-auto mb-3">
                           <Phone className="h-6 w-6 text-green-600" />
                         </div>
                         <p className="font-medium">Call Us</p>
-                        <p className="text-sm text-muted-foreground">+91 86101 53961</p>
+                        <p className="text-sm text-muted-foreground">{settings.storePhone}</p>
                       </a>
                     </CardContent>
                   </Card>
                   
                   <Card className="shadow-card">
                     <CardContent className="pt-6 text-center">
-                      <a 
-                        href="https://wa.me/918610153961" 
-                        target="_blank" 
+                      <a
+                        href={formatWhatsAppUrl(settings.storeWhatsApp)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="block hover:opacity-80 transition-opacity"
                       >
