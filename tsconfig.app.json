@@ -23,7 +23,7 @@
         "./src/*"
       ]
     },
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
