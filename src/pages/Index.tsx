@@ -6,7 +6,6 @@ import WhyChooseUs from "@/components/WhyChooseUs";
 import StoreLocation from "@/components/StoreLocation";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
-import AnnouncementPopup from "@/components/AnnouncementPopup";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Index() {
@@ -27,7 +26,7 @@ export default function Index() {
       </main>
       <Footer />
       <FloatingButtons />
-      <AnnouncementPopup />
+      {/* AnnouncementPopup removed — now in App.tsx for all pages */}
     </div>
   );
 }

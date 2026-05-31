@@ -25,12 +25,7 @@ export function ReferralHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, claimed: 0, pending: 0, earnings: 0 });
 
-  useEffect(() => {
-    if (user) {
-      fetchReferrals();
-    }
-  }, [user, fetchReferrals]);
-
+  // Fix — fetchReferrals defined BEFORE useEffect ✅
   const fetchReferrals = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -75,20 +70,24 @@ export function ReferralHistory() {
 
       const total = referralData.length;
       const claimed = referralData.filter(r => r.is_claimed).length;
-      const earnings = referralData.filter(r => r.is_claimed).reduce((sum, r) => sum + (r.bonus_amount || 0), 0);
+      const earnings = referralData
+        .filter(r => r.is_claimed)
+        .reduce((sum, r) => sum + (r.bonus_amount || 0), 0);
       
-      setStats({
-        total,
-        claimed,
-        pending: total - claimed,
-        earnings
-      });
+      setStats({ total, claimed, pending: total - claimed, earnings });
     } catch (error) {
       console.error("Error fetching referrals:", error);
     } finally {
       setIsLoading(false);
     }
   }, [user?.id]);
+
+  // Fix — useEffect now comes AFTER fetchReferrals ✅
+  useEffect(() => {
+    if (user) {
+      fetchReferrals();
+    }
+  }, [user, fetchReferrals]);
 
   if (isLoading) {
     return (
@@ -158,7 +157,9 @@ export function ReferralHistory() {
               <Gift className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground font-medium">No referrals yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Share your code to start earning!</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share your code to start earning!
+            </p>
           </div>
         ) : (
           <ScrollArea className="h-[200px]">
@@ -185,10 +186,10 @@ export function ReferralHistory() {
                     <p className="font-bold text-green-600">
                       +₹{referral.bonus_amount || 0}
                     </p>
-                    <Badge 
+                    <Badge
                       variant="outline"
-                      className={referral.is_claimed 
-                        ? "bg-green-500/10 text-green-600 border-green-500/20" 
+                      className={referral.is_claimed
+                        ? "bg-green-500/10 text-green-600 border-green-500/20"
                         : "bg-amber-500/10 text-amber-600 border-amber-500/20"
                       }
                     >

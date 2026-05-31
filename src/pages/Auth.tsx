@@ -129,6 +129,7 @@ export default function Auth() {
           phone: formData.phone,
           user_type: isDealer ? "dealer" : "retail",
           business_name: isDealer ? formData.businessName : "",
+          gst_number: isDealer ? formData.gstNumber : "",
           referred_by: formData.referralCode || "",
         };
 

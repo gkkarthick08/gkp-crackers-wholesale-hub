@@ -5,8 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-
+import AnnouncementPopup from "@/components/AnnouncementPopup";
 import ScrollToTop from "@/components/ScrollToTop";
+import LoadingScreen from "@/components/LoadingScreen";
 import Index from "./pages/Index";
 import QuickOrder from "./pages/QuickOrder";
 import Products from "./pages/Products";
@@ -24,16 +25,27 @@ import Contact from "./pages/Contact";
 import POS from "./pages/POS";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Fix 3 — QueryClient with proper configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 /* ===============================
    AUTH GUARD - requires login
 ================================ */
-const AuthGuard = ({ children }: { children: JSX.Element }) => {
+// Fix 1 — React.ReactNode instead of JSX.Element
+// Fix 2 — Show LoadingScreen instead of blank screen
+const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  if (isLoading) return null;
+  if (isLoading) return <LoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
-  return children;
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -45,6 +57,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            {/* Fix 4 — AnnouncementPopup now shows on ALL pages */}
+            <AnnouncementPopup />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/quick-order" element={<QuickOrder />} />

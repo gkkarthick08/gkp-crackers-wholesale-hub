@@ -20,12 +20,7 @@ export function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-    }
-  }, [user, fetchTransactions]);
-
+  // Fix — fetchTransactions defined BEFORE useEffect ✅
   const fetchTransactions = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -43,6 +38,13 @@ export function TransactionHistory() {
       setIsLoading(false);
     }
   }, [user?.id]);
+
+  // Fix — useEffect now comes AFTER fetchTransactions ✅
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+    }
+  }, [user, fetchTransactions]);
 
   const isCredit = (type: string) => type === "credit" || type === "referral_bonus";
 
@@ -133,13 +135,11 @@ export function TransactionHistory() {
                     </div>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1 shrink-0 ml-2">
-                    <p
-                      className={`font-bold ${
-                        isCredit(transaction.transaction_type)
-                          ? "text-green-600"
-                          : "text-red-500"
-                      }`}
-                    >
+                    <p className={`font-bold ${
+                      isCredit(transaction.transaction_type)
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }`}>
                       {isCredit(transaction.transaction_type) ? "+" : "-"}₹{Math.abs(transaction.amount).toFixed(2)}
                     </p>
                     {getTransactionBadge(transaction.transaction_type)}

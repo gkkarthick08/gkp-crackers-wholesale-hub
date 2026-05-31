@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Megaphone, Gift, AlertCircle, Info } from "lucide-react";
+import { X, Megaphone, Gift, AlertCircle, Info, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,15 +20,19 @@ interface Announcement {
 
 const iconMap: Record<string, React.ReactNode> = {
   offer: <Gift className="h-6 w-6" />,
+  promo: <Tag className="h-6 w-6" />,
   warning: <AlertCircle className="h-6 w-6" />,
   info: <Info className="h-6 w-6" />,
+  legal: <Info className="h-6 w-6" />,
   announcement: <Megaphone className="h-6 w-6" />,
 };
 
 const colorMap: Record<string, string> = {
   offer: "from-amber-500 to-orange-600",
+  promo: "from-green-500 to-emerald-600",
   warning: "from-red-500 to-rose-600",
   info: "from-blue-500 to-indigo-600",
+  legal: "from-gray-500 to-slate-600",
   announcement: "from-primary to-secondary",
 };
 
@@ -57,9 +61,10 @@ export default function AnnouncementPopup() {
       }
 
       if (data && data.length > 0) {
-        // Check session storage for dismissed announcements
-        const dismissedIds = sessionStorage.getItem("dismissed_announcements");
-        const dismissedSet = dismissedIds ? new Set(JSON.parse(dismissedIds)) : new Set();
+        const dismissedIds = localStorage.getItem("gkp_dismissed_announcements");
+        const dismissedSet = dismissedIds
+          ? new Set(JSON.parse(dismissedIds))
+          : new Set();
         
         const activeAnnouncements = data.filter((a) => !dismissedSet.has(a.id));
         
@@ -71,7 +76,6 @@ export default function AnnouncementPopup() {
       }
     };
 
-    // Delay popup to not interrupt initial page load
     const timer = setTimeout(fetchAnnouncements, 1000);
     return () => clearTimeout(timer);
   }, []);
@@ -80,7 +84,7 @@ export default function AnnouncementPopup() {
     const currentAnnouncement = announcements[currentIndex];
     const newDismissed = new Set(dismissed).add(currentAnnouncement.id);
     setDismissed(newDismissed);
-    sessionStorage.setItem("dismissed_announcements", JSON.stringify([...newDismissed]));
+    localStorage.setItem("gkp_dismissed_announcements", JSON.stringify([...newDismissed]));
 
     if (currentIndex < announcements.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -99,7 +103,6 @@ export default function AnnouncementPopup() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0">
-        {/* Header with gradient */}
         <div className={`bg-gradient-to-r ${gradientClass} p-6 text-white`}>
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -113,7 +116,6 @@ export default function AnnouncementPopup() {
           </DialogHeader>
         </div>
 
-        {/* Content */}
         <div className="p-6">
           {current.image_url && (
             <div className="mb-4 rounded-lg overflow-hidden">
@@ -121,6 +123,9 @@ export default function AnnouncementPopup() {
                 src={current.image_url}
                 alt={current.title}
                 className="w-full h-48 object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
               />
             </div>
           )}
