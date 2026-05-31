@@ -33,7 +33,7 @@ export function ReferralCard() {
       try {
         await navigator.share({
           title: "Join GKP Crackers!",
-          text: `Use my referral code ${referralCode} to sign up and get ₹25 bonus! 🎉`,
+          text: `Use my referral code ${referralCode} to sign up and get ₹${referredBonus} bonus! 🎉`,
           url: referralLink,
         });
       } catch (error) {
@@ -48,7 +48,7 @@ export function ReferralCard() {
 
   const shareOnWhatsApp = () => {
     const message = encodeURIComponent(
-      `🎆 Hey! Join GKP Crackers and get ₹25 bonus!\n\nUse my referral code: ${referralCode}\n\nSign up here: ${referralLink}`
+      `🎆 Hey! Join GKP Crackers and get ₹${referredBonus} bonus!\n\nUse my referral code: ${referralCode}\n\nSign up here: ${referralLink}`
     );
     window.open(`https://wa.me/?text=${message}`, "_blank");
   };
