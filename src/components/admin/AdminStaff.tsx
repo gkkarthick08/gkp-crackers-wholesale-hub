@@ -58,6 +58,8 @@ export default function AdminStaff() {
     }
   }, [toast]);
 
+  useEffect(() => { fetchStaff(); }, [fetchStaff]);
+
   const addStaff = async () => {
     if (!searchEmail.trim()) return;
     setIsAdding(true);
