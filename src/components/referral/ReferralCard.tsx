@@ -3,13 +3,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Copy, Share2, Users, Check, Gift, Sparkles, MessageCircle, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export function ReferralCard() {
   const { profile } = useAuth();
+  const { settings } = useSiteSettings();
   const [copied, setCopied] = useState(false);
 
+  const referrerBonus = settings.referralBonus;
+  const referredBonus = settings.referralBonusReferred;
   const referralCode = profile?.referral_code || "";
   const referralLink = `${window.location.origin}/auth?ref=${referralCode}`;
 
@@ -29,7 +33,7 @@ export function ReferralCard() {
       try {
         await navigator.share({
           title: "Join GKP Crackers!",
-          text: `Use my referral code ${referralCode} to sign up and get ₹25 bonus! 🎉`,
+          text: `Use my referral code ${referralCode} to sign up and get ₹${referredBonus} bonus! 🎉`,
           url: referralLink,
         });
       } catch (error) {
@@ -44,7 +48,7 @@ export function ReferralCard() {
 
   const shareOnWhatsApp = () => {
     const message = encodeURIComponent(
-      `🎆 Hey! Join GKP Crackers and get ₹25 bonus!\n\nUse my referral code: ${referralCode}\n\nSign up here: ${referralLink}`
+      `🎆 Hey! Join GKP Crackers and get ₹${referredBonus} bonus!\n\nUse my referral code: ${referralCode}\n\nSign up here: ${referralLink}`
     );
     window.open(`https://wa.me/?text=${message}`, "_blank");
   };
@@ -64,7 +68,7 @@ export function ReferralCard() {
           </div>
           <div>
             <h3 className="font-bold text-xl text-white">Refer & Earn</h3>
-            <p className="text-sm text-white/80">Earn ₹50 for each referral!</p>
+            <p className="text-sm text-white/80">Earn ₹{referrerBonus} for each referral!</p>
           </div>
         </div>
       </div>
@@ -129,7 +133,7 @@ export function ReferralCard() {
             {[
               "Share your unique referral code",
               "Friends sign up using your code",
-              "You earn ₹50, they get ₹25!"
+              `You earn ₹${referrerBonus}, they get ₹${referredBonus}!`
             ].map((step, index) => (
               <div key={index} className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">

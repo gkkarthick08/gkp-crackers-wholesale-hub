@@ -6,12 +6,19 @@ import { TransactionHistory } from "@/components/wallet/TransactionHistory";
 import { ReferralCard } from "@/components/referral/ReferralCard";
 import { ReferralHistory } from "@/components/referral/ReferralHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet as WalletIcon, Users, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Wallet as WalletIcon, Users, Sparkles, Lock } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export default function Wallet() {
   usePageMeta({ title: "Wallet & Referrals — GKP Crackers", description: "Manage your wallet balance and referral rewards." });
   const { profile } = useAuth();
+  const { settings } = useSiteSettings();
+
+  const walletEnabled = settings.enableWallet;
+  const referralsEnabled = settings.enableReferrals;
+  const defaultTab = walletEnabled ? "wallet" : referralsEnabled ? "referrals" : "wallet";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -30,37 +37,60 @@ export default function Wallet() {
             Manage your balance and earn rewards
           </p>
         </div>
-        
-        <Tabs defaultValue="wallet" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2 h-12">
-            <TabsTrigger value="wallet" className="flex items-center gap-2 h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <WalletIcon className="h-4 w-4" />
-              <span className="font-medium">Wallet</span>
-            </TabsTrigger>
-            <TabsTrigger value="referrals" className="flex items-center gap-2 h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Users className="h-4 w-4" />
-              <span className="font-medium">Referrals</span>
-            </TabsTrigger>
-          </TabsList>
 
-          <TabsContent value="wallet" className="space-y-6 mt-6">
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <WalletBalance balance={profile?.wallet_balance || 0} />
-              </div>
-              <div className="lg:col-span-2">
-                <TransactionHistory />
-              </div>
-            </div>
-          </TabsContent>
+        {!walletEnabled && !referralsEnabled ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
+              <p className="text-muted-foreground">
+                Wallet and Referrals are currently disabled.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Tabs defaultValue={defaultTab} className="space-y-6">
+            <TabsList className={`grid w-full max-w-md h-12 ${walletEnabled && referralsEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
+              {walletEnabled && (
+                <TabsTrigger value="wallet" className="flex items-center gap-2 h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <WalletIcon className="h-4 w-4" />
+                  <span className="font-medium">Wallet</span>
+                </TabsTrigger>
+              )}
+              {referralsEnabled && (
+                <TabsTrigger value="referrals" className="flex items-center gap-2 h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Users className="h-4 w-4" />
+                  <span className="font-medium">Referrals</span>
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-          <TabsContent value="referrals" className="space-y-6 mt-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <ReferralCard />
-              <ReferralHistory />
-            </div>
-          </TabsContent>
-        </Tabs>
+            {walletEnabled && (
+              <TabsContent value="wallet" className="space-y-6 mt-6">
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-1">
+                    <WalletBalance
+                      balance={profile?.wallet_balance || 0}
+                      referralBonus={settings.referralBonus}
+                      referralsEnabled={referralsEnabled}
+                    />
+                  </div>
+                  <div className="lg:col-span-2">
+                    <TransactionHistory />
+                  </div>
+                </div>
+              </TabsContent>
+            )}
+
+            {referralsEnabled && (
+              <TabsContent value="referrals" className="space-y-6 mt-6">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <ReferralCard />
+                  <ReferralHistory />
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
+        )}
       </main>
 
       <Footer />

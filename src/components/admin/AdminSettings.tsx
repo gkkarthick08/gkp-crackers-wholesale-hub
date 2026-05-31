@@ -124,19 +124,18 @@ export default function AdminSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Save each setting individually using upsert
-      const settingsEntries = Object.entries(settings);
-      
-      for (const [key, value] of settingsEntries) {
-        const { error } = await supabase
-          .from("site_settings")
-          .upsert(
-            { key, value: value as Database["public"]["Tables"]["site_settings"]["Insert"]["value"], updated_at: new Date().toISOString() },
-            { onConflict: "key" }
-          );
+      // Batch upsert all settings in a single round-trip
+      const rows = Object.entries(settings).map(([key, value]) => ({
+        key,
+        value: value as Database["public"]["Tables"]["site_settings"]["Insert"]["value"],
+        updated_at: new Date().toISOString(),
+      }));
 
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert(rows, { onConflict: "key" });
+
+      if (error) throw error;
 
       toast({
         title: "Settings saved",

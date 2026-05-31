@@ -1,11 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wallet, TrendingUp, Gift, ShoppingCart, Sparkles } from "lucide-react";
+import { Wallet, Gift, ShoppingCart, Sparkles } from "lucide-react";
 
 interface WalletBalanceProps {
   balance: number;
+  referralBonus?: number;
+  referralsEnabled?: boolean;
 }
 
-export function WalletBalance({ balance }: WalletBalanceProps) {
+export function WalletBalance({ balance, referralBonus = 50, referralsEnabled = true }: WalletBalanceProps) {
   return (
     <div className="space-y-4">
       {/* Main Balance Card */}
@@ -36,33 +38,21 @@ export function WalletBalance({ balance }: WalletBalanceProps) {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 gap-3">
-        <Card className="border-green-500/20 bg-green-500/5 hover:bg-green-500/10 transition-colors">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-green-500/10">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+        {referralsEnabled && (
+          <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10">
+                  <Gift className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground font-medium">Earn More</p>
+                  <p className="font-bold text-primary">Refer friends & earn ₹{referralBonus}</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground font-medium">Credits Available</p>
-                <p className="font-bold text-lg text-green-600">₹{balance.toLocaleString("en-IN")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10">
-                <Gift className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground font-medium">Earn More</p>
-                <p className="font-bold text-primary">Refer friends & earn ₹50</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-dealer/20 bg-dealer/5 hover:bg-dealer/10 transition-colors">
           <CardContent className="py-4">
