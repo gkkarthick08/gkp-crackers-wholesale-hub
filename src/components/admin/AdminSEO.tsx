@@ -45,7 +45,7 @@ export default function AdminSEO() {
           .eq("key", "seo_settings")
           .maybeSingle();
         if (data?.value && typeof data.value === "object") {
-          setSeo((prev) => ({ ...prev, ...(data.value as SEOSettings) }));
+          setSeo((prev) => ({ ...prev, ...(data.value as unknown as SEOSettings) }));
         }
       } catch (err) {
         console.error("Error fetching SEO settings:", err);
