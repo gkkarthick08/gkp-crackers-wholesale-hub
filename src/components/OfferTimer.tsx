@@ -15,6 +15,21 @@ interface CountdownSettings {
   countdownTargetDate: string;
 }
 
+type CountdownSettingKey = keyof CountdownSettings;
+
+const countdownSettingKeys = ["countdownEnabled", "countdownTitle", "countdownTargetDate"] as const;
+
+const parseCountdownSetting = <K extends CountdownSettingKey>(
+  key: K,
+  value: unknown,
+): CountdownSettings[K] => {
+  if (key === "countdownEnabled") {
+    return (value === "true" || value === true) as CountdownSettings[K];
+  }
+
+  return String(value ?? "") as CountdownSettings[K];
+};
+
 export default function OfferTimer() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [settings, setSettings] = useState<CountdownSettings>({
@@ -41,19 +56,14 @@ export default function OfferTimer() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          const loadedSettings: Record<string, unknown> = {};
+          const loadedSettings: Partial<CountdownSettings> = {};
           data.forEach((item) => {
-            if (item.key in settings) {
-              const key = item.key as keyof CountdownSettings;
-              const defaultValue = settings[key];
-              if (typeof defaultValue === "boolean") {
-                loadedSettings[key] = item.value === "true" || item.value === true;
-              } else {
-                loadedSettings[key] = item.value;
-              }
+            if (countdownSettingKeys.includes(item.key as CountdownSettingKey)) {
+              const key = item.key as CountdownSettingKey;
+              loadedSettings[key] = parseCountdownSetting(key, item.value);
             }
           });
-          setSettings((prev) => ({ ...prev, ...(loadedSettings as Partial<CountdownSettings>) }));
+          setSettings((prev) => ({ ...prev, ...loadedSettings }));
 
         }
       } catch (error) {
