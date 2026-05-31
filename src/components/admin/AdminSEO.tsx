@@ -45,7 +45,7 @@ export default function AdminSEO() {
           .eq("key", "seo_settings")
           .maybeSingle();
         if (data?.value && typeof data.value === "object") {
-          setSeo((prev) => ({ ...prev, ...(data.value as SEOSettings) }));
+          setSeo((prev) => ({ ...prev, ...(data.value as unknown as SEOSettings) }));
         }
       } catch (err) {
         console.error("Error fetching SEO settings:", err);
@@ -60,9 +60,9 @@ export default function AdminSEO() {
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from<PublicSettingRow>("public_settings")
+        .from("public_settings")
         .upsert(
-          { key: "seo_settings", value: seo as Json, updated_at: new Date().toISOString() },
+          { key: "seo_settings", value: seo as unknown as Json, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         );
       if (error) throw error;

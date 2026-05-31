@@ -125,8 +125,15 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">;
 
+let toastCount = 0;
+function genId() {
+  toastCount = (toastCount + 1) % Number.MAX_SAFE_INTEGER;
+  return toastCount.toString();
+}
+
 function toast({ ...props }: Toast) {
   const id = genId();
+
 
   const update = (props: ToasterToast) =>
     dispatch({

@@ -23,7 +23,7 @@ export default function AdminStaff() {
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => { fetchStaff(); }, [fetchStaff]);
+  
 
   const fetchStaff = useCallback(async () => {
     setIsLoading(true);
@@ -57,6 +57,8 @@ export default function AdminStaff() {
       setIsLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
   const addStaff = async () => {
     if (!searchEmail.trim()) return;

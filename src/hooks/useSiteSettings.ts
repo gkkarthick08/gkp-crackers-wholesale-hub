@@ -94,7 +94,7 @@ export function useSiteSettings() {
           data.forEach((item) => {
             const key = item.key as keyof SiteSettings;
             if (key in defaultSiteSettings) {
-              loaded[key] = parseValue(item.value as SiteSettingsValue, defaultSiteSettings[key]) as SiteSettings[typeof key];
+              (loaded as Record<string, unknown>)[key] = parseValue(item.value as SiteSettingsValue, defaultSiteSettings[key]);
             }
           });
           setSettings({ ...defaultSiteSettings, ...loaded });

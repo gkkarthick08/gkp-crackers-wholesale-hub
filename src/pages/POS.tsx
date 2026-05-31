@@ -88,20 +88,18 @@ export default function POS() {
     getUnsyncedOrders().then((o) => setUnsyncedCount(o.length)).catch(() => {});
   }, [showReceipt]);
 
-  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
-
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       if (isOnline) {
         if (billingMode === "wholesale") {
           const { data } = await supabase
-            .from<WholesaleProductRow>("wholesale_products")
+            .from("wholesale_products")
             .select("*, category:categories(name), brand:brands(name)")
             .eq("is_visible", true)
             .order("name");
           if (data) {
-            const mapped = data.map((p) => ({
+            const mapped: PosProduct[] = (data as any[]).map((p) => ({
               id: p.id,
               product_code: p.product_code,
               name: p.name,
@@ -116,18 +114,17 @@ export default function POS() {
               case_price: p.case_price,
             }));
             setProducts(mapped);
-            const storeName: "products" | "wholesale_products" = "wholesale_products";
-            await cacheProducts(mapped, storeName);
-            setCategories([...new Set(mapped.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
+            await cacheProducts(mapped as any, "wholesale_products");
+            setCategories([...new Set(mapped.map((p) => p.category_name).filter(Boolean))] as string[]);
           }
         } else {
           const { data } = await supabase
-            .from<RetailProductRow>("products")
+            .from("products")
             .select("*, category:categories(name), brand:brands(name)")
             .eq("is_visible", true)
             .order("name");
           if (data) {
-            const mapped = data.map((p) => ({
+            const mapped: PosProduct[] = (data as any[]).map((p) => ({
               id: p.id,
               product_code: p.product_code,
               name: p.name,
@@ -142,26 +139,28 @@ export default function POS() {
               case_price: p.case_price,
             }));
             setProducts(mapped);
-            const storeName: "products" | "wholesale_products" = "products";
-            await cacheProducts(mapped, storeName);
-            setCategories([...new Set(mapped.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
+            await cacheProducts(mapped as any, "products");
+            setCategories([...new Set(mapped.map((p) => p.category_name).filter(Boolean))] as string[]);
           }
         }
       } else {
         const storeName: "products" | "wholesale_products" = billingMode === "wholesale" ? "wholesale_products" : "products";
         const cached = await getCachedProducts(storeName);
-        setProducts(cached);
-        setCategories([...new Set(cached.map((p: PosProduct) => p.category_name).filter(Boolean))] as string[]);
+        setProducts(cached as unknown as PosProduct[]);
+        setCategories([...new Set((cached as unknown as PosProduct[]).map((p) => p.category_name).filter(Boolean))] as string[]);
       }
     } catch (err) {
       console.error("Error loading POS products:", err);
       const storeName: "products" | "wholesale_products" = billingMode === "wholesale" ? "wholesale_products" : "products";
       const cached = await getCachedProducts(storeName);
-      setProducts(cached);
+      setProducts(cached as unknown as PosProduct[]);
     } finally {
       setIsLoading(false);
     }
   }, [billingMode, isOnline]);
+
+  useEffect(() => { loadProducts(); }, [billingMode, loadProducts]);
+
 
   const lookupCustomer = async () => {
     if (!customerPhone || customerPhone.length < 10 || !isOnline) return;

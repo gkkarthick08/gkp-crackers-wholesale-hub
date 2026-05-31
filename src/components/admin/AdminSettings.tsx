@@ -100,11 +100,12 @@ export default function AdminSettings() {
               const key = item.key as keyof SiteSettings;
               const defaultValue = defaultSettings[key];
               if (typeof defaultValue === "boolean") {
-                loadedSettings[key] = (item.value === "true" || item.value === true) as SiteSettings[typeof key];
+                (loadedSettings as Record<string, unknown>)[key] = item.value === "true" || item.value === true;
               } else if (typeof defaultValue === "number") {
-                loadedSettings[key] = Number(item.value) as SiteSettings[typeof key];
+                (loadedSettings as Record<string, unknown>)[key] = Number(item.value);
               } else {
-                loadedSettings[key] = item.value as SiteSettings[typeof key];
+                (loadedSettings as Record<string, unknown>)[key] = item.value;
+
               }
             }
           });
