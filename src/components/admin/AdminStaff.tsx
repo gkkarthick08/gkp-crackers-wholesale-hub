@@ -23,7 +23,7 @@ export default function AdminStaff() {
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => { fetchStaff(); }, [fetchStaff]);
+  
 
   const fetchStaff = useCallback(async () => {
     setIsLoading(true);
