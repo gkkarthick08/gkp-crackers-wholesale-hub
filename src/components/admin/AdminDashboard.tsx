@@ -25,9 +25,9 @@ interface RecentOrder {
   id: string;
   order_number: string;
   customer_name: string;
-  final_amount: number;
-  status: string;
-  created_at: string;
+  final_amount: number | null;
+  status: string | null;
+  created_at: string | null;
 }
 
 export default function AdminDashboard() {
@@ -50,26 +50,57 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [products, profiles, orders, referrals, pendingDealersRes] = await Promise.all([
+        const [
+          retailProducts,
+          wholesaleProducts,
+          profiles,
+          allOrders,
+          recentOrdersRes,
+          referrals,
+          pendingDealersRes,
+        ] = await Promise.all([
+          // Fix 1 — Count retail products
           supabase.from("products").select("id", { count: "exact", head: true }),
+          // Fix 2 — Count wholesale products too
+          supabase.from("wholesale_products").select("id", { count: "exact", head: true }),
+          // Profiles for customer count and wallet balance
           supabase.from("profiles").select("id, wallet_balance"),
-          supabase.from("orders").select("id, status, final_amount, order_number, customer_name, created_at").order("created_at", { ascending: false }).limit(5),
+          // Fix 3 — Fetch ALL orders for correct stats (no limit!)
+          supabase.from("orders").select("id, status, final_amount"),
+          // Fix 4 — Separate query for recent orders display only
+          supabase.from("orders")
+            .select("id, status, final_amount, order_number, customer_name, created_at")
+            .order("created_at", { ascending: false })
+            .limit(5),
+          // Referrals
           supabase.from("referrals").select("id, is_claimed"),
-          supabase.from("profiles").select("id", { count: "exact", head: true }).eq("user_type", "dealer").eq("is_verified", false),
+          // Pending dealers
+          supabase.from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("user_type", "dealer")
+            .eq("is_verified", false),
         ]);
 
-        const pendingOrders = orders.data?.filter(o => o.status === "pending").length || 0;
-        const cancelledOrders = orders.data?.filter(o => o.status === "cancelled").length || 0;
-        const activeOrders = orders.data?.filter(o => o.status !== "cancelled").length || 0;
-        // Calculate revenue only from non-cancelled orders
-        const totalRevenue = orders.data?.filter(o => o.status !== "cancelled").reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0) || 0;
-        const totalWalletBalance = profiles.data?.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0) || 0;
+        // Fix 5 — Calculate stats from ALL orders
+        const allOrdersData = allOrders.data || [];
+        const pendingOrders = allOrdersData.filter(o => o.status === "pending").length;
+        const cancelledOrders = allOrdersData.filter(o => o.status === "cancelled").length;
+        const activeOrders = allOrdersData.filter(o => o.status !== "cancelled").length;
+        const totalRevenue = allOrdersData
+          .filter(o => o.status !== "cancelled")
+          .reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
+
+        const totalWalletBalance = profiles.data
+          ?.reduce((sum, p) => sum + (Number(p.wallet_balance) || 0), 0) || 0;
         const pendingReferrals = referrals.data?.filter(r => !r.is_claimed).length || 0;
 
+        // Fix 6 — Total products = retail + wholesale
+        const totalProducts = (retailProducts.count || 0) + (wholesaleProducts.count || 0);
+
         setStats({
-          totalProducts: products.count || 0,
+          totalProducts,
           totalCustomers: profiles.data?.length || 0,
-          totalOrders: orders.data?.length || 0,
+          totalOrders: allOrdersData.length,
           activeOrders,
           pendingOrders,
           totalRevenue,
@@ -80,7 +111,7 @@ export default function AdminDashboard() {
           pendingDealers: pendingDealersRes.count || 0,
         });
 
-        setRecentOrders(orders.data || []);
+        setRecentOrders(recentOrdersRes.data || []);
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
@@ -98,6 +129,7 @@ export default function AdminDashboard() {
       icon: Package,
       color: "bg-primary/10 text-primary",
       link: "/admin/products",
+      subtext: "Retail + Wholesale",
     },
     {
       title: "Total Customers",
@@ -257,12 +289,12 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-sm">{order.order_number}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(order.status)}`}>
-                          {order.status}
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(order.status || '')}`}>
+                          {order.status || "unknown"}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground truncate">
-                        {order.customer_name} • {format(new Date(order.created_at), "dd MMM")}
+                        {order.customer_name} • {order.created_at ? format(new Date(order.created_at), "dd MMM") : "-"}
                       </p>
                     </div>
                     <p className="font-semibold text-sm">
