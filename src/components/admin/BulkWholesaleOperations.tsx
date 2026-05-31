@@ -212,9 +212,9 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
           is_visible: product.is_visible,
         };
         if (uploadMode === "update") {
-          await supabase.from<WholesaleProductRow>("wholesale_products").update(productData).eq("product_code", product.product_code);
+          await supabase.from("wholesale_products").update(productData).eq("product_code", product.product_code);
         } else {
-          await supabase.from<WholesaleProductRow>("wholesale_products").insert(productData);
+          await supabase.from("wholesale_products").insert(productData);
         }
         processed++;
         setUploadProgress(Math.round((processed / validProducts.length) * 100));
@@ -253,7 +253,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
           const newCaseQty = parseInt(bulkEditValue) || 1;
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
-            if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ case_qty: newCaseQty, case_price: p.sale_price * newCaseQty }).eq("id", id);
+            if (p) await supabase.from("wholesale_products").update({ case_qty: newCaseQty, case_price: p.sale_price * newCaseQty }).eq("id", id);
           }
           toast({ title: `Updated ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
@@ -261,7 +261,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
         case "stock_increase": {
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
-            if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ stock: p.stock + (parseInt(bulkEditValue) || 0) }).eq("id", id);
+            if (p) await supabase.from("wholesale_products").update({ stock: p.stock + (parseInt(bulkEditValue) || 0) }).eq("id", id);
           }
           toast({ title: `Updated ${selectedProducts.length} products` });
           resetBulkEdit(); onRefresh(); return;
@@ -272,7 +272,7 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
             const p = products.find(x => x.id === id);
             if (p) {
               const newSale = Math.round(p.sale_price * (1 + percent / 100));
-              await supabase.from<WholesaleProductRow>("wholesale_products").update({
+              await supabase.from("wholesale_products").update({
                 mrp: Math.round(p.mrp * (1 + percent / 100)),
                 purchase_price: Math.round(p.purchase_price * (1 + percent / 100)),
                 sale_price: newSale,
@@ -289,10 +289,10 @@ export default function BulkWholesaleOperations({ products, categories, brands, 
         if (updateData.sale_price) {
           for (const id of selectedProducts) {
             const p = products.find(x => x.id === id);
-            if (p) await supabase.from<WholesaleProductRow>("wholesale_products").update({ ...updateData, case_price: updateData.sale_price * p.case_qty }).eq("id", id);
+            if (p) await supabase.from("wholesale_products").update({ ...updateData, case_price: updateData.sale_price * p.case_qty }).eq("id", id);
           }
         } else {
-          const { error } = await supabase.from<WholesaleProductRow>("wholesale_products").update(updateData).in("id", selectedProducts);
+          const { error } = await supabase.from("wholesale_products").update(updateData).in("id", selectedProducts);
           if (error) throw error;
         }
         toast({ title: `Updated ${selectedProducts.length} products` });

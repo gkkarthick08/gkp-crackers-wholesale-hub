@@ -96,7 +96,7 @@ export default function POS() {
       if (isOnline) {
         if (billingMode === "wholesale") {
           const { data } = await supabase
-            .from<WholesaleProductRow>("wholesale_products")
+            .from("wholesale_products")
             .select("*, category:categories(name), brand:brands(name)")
             .eq("is_visible", true)
             .order("name");
@@ -122,7 +122,7 @@ export default function POS() {
           }
         } else {
           const { data } = await supabase
-            .from<RetailProductRow>("products")
+            .from("products")
             .select("*, category:categories(name), brand:brands(name)")
             .eq("is_visible", true)
             .order("name");
