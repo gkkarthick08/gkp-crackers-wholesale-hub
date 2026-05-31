@@ -22,7 +22,6 @@ interface WholesaleProduct {
   image_url: string | null;
   video_url: string | null;
   mrp: number;
-  purchase_price: number;
   sale_price: number;
   case_qty: number;
   case_price: number;
@@ -56,7 +55,8 @@ export default function WholesaleCatalog() {
         const [productsRes, categoriesRes] = await Promise.all([
           (supabase as typeof supabase)
             .from("wholesale_products")
-            .select(`*, category:categories(name), brand:brands(name)`)
+            // Security: Don't fetch purchase_price (cost price) to frontend (Issue #64)
+            .select(`id,product_code,name,description,image_url,video_url,mrp,sale_price,case_qty,case_price,stock,category:categories(name),brand:brands(name)`)
             .eq("is_visible", true)
             .order("display_order"),
           supabase

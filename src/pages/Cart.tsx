@@ -72,7 +72,7 @@ export default function Cart() {
     }
   };
 
-  const sendToWhatsApp = () => {
+  const sendToWhatsApp = async () => {
     const validation = validateCustomerDetails(customerDetails);
     if (!validation.success) {
       setFieldErrors(validation.errors);
@@ -95,58 +95,196 @@ export default function Cart() {
       return;
     }
 
-    // Build WhatsApp message
-    let message = `🎆 *NEW ORDER ESTIMATE - GKP CRACKERS*\n\n`;
-    message += `👤 *Customer:* ${customerDetails.name}\n`;
-    message += `📞 *Phone:* ${customerDetails.phone}\n`;
-    message += `📍 *Address:* ${customerDetails.address}\n`;
-    if (customerDetails.notes) {
-      message += `📝 *Notes:* ${customerDetails.notes}\n`;
-    }
-    message += `\n━━━━━━━━━━━━━━━━\n`;
-    message += `📦 *ORDER DETAILS:*\n\n`;
+    // ISSUE #16: Block stock for WhatsApp orders too
+    setIsSubmitting(true);
+    try {
+      // Validate stock before saving
+      const retailIds = items.filter(i => !i.is_wholesale).map(i => i.id);
+      const wholesaleIds = items.filter(i => i.is_wholesale).map(i => i.id);
 
-    items.forEach((item, index) => {
-      const itemSaving = (item.mrp - item.price) * item.quantity;
-      const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
-      message += `${index + 1}. ${item.name}\n`;
-      message += `   MRP: ₹${item.mrp}/pc → Sale: ₹${item.price}/pc\n`;
-      if (item.is_wholesale && item.case_qty) {
-        message += `   Case: ${item.case_qty} pcs × ₹${item.price} = ₹${item.case_price?.toLocaleString()}/case\n`;
-        message += `   Qty: ${cases} case(s) = ${item.quantity} pcs → ₹${(item.quantity * item.price).toLocaleString()}\n`;
-      } else {
-        message += `   Qty: ${item.quantity} × ₹${item.price} = ₹${(item.quantity * item.price).toLocaleString()}\n`;
+      // Check retail stock
+      if (retailIds.length > 0) {
+        const { data: retailProducts, error: stockError } = await supabase
+          .from("products")
+          .select("id, stock")
+          .in("id", retailIds);
+
+        if (stockError) throw stockError;
+        if (retailProducts) {
+          for (const item of items.filter(i => !i.is_wholesale)) {
+            const product = retailProducts.find(p => p.id === item.id);
+            if (!product || product.stock < item.quantity) {
+              const availableStock = product?.stock || 0;
+              toast({
+                title: "Insufficient Stock",
+                description: `${item.name}: Only ${availableStock} in stock, but you ordered ${item.quantity}`,
+                variant: "destructive"
+              });
+              setIsSubmitting(false);
+              return;
+            }
+          }
+        }
       }
-      if (itemSaving > 0) {
-        message += `   💰 Saving: ₹${itemSaving.toLocaleString()}\n`;
+
+      // Check wholesale stock
+      if (wholesaleIds.length > 0) {
+        const { data: wholesaleProducts, error: stockError } = await supabase
+          .from("wholesale_products")
+          .select("id, stock")
+          .in("id", wholesaleIds);
+
+        if (stockError) throw stockError;
+        if (wholesaleProducts) {
+          for (const item of items.filter(i => i.is_wholesale)) {
+            const product = wholesaleProducts.find(p => p.id === item.id);
+            if (!product || product.stock < item.quantity) {
+              const availableStock = product?.stock || 0;
+              toast({
+                title: "Insufficient Stock",
+                description: `${item.name}: Only ${availableStock} in stock, but you ordered ${item.quantity}`,
+                variant: "destructive"
+              });
+              setIsSubmitting(false);
+              return;
+            }
+          }
+        }
       }
-      message += `\n`;
-    });
 
-    message += `━━━━━━━━━━━━━━━━\n`;
-    message += `📊 *TOTAL ITEMS:* ${totalItems}\n`;
-    message += `💵 *MRP TOTAL:* ₹${totalMrp.toLocaleString()}\n`;
-    message += `🎉 *YOUR SAVINGS:* ₹${totalSavings.toLocaleString()} (${savingsPercentage}% OFF)\n`;
-    message += `💰 *SALE TOTAL:* ₹${totalAmount.toLocaleString()}\n`;
-    if (walletDiscount > 0) {
-      message += `🎁 *WALLET DISCOUNT:* -₹${walletDiscount.toLocaleString()}\n`;
-    }
-    message += `💵 *FINAL TOTAL:* ₹${finalAmount.toLocaleString()}\n\n`;
-    message += `⚠️ _This is an estimate. Final price may vary._`;
+      // ISSUE #112: Save WhatsApp order to database too
+      const { data: orderNumber, error: orderNumError } = await supabase.rpc("generate_order_number");
+      if (orderNumError) throw orderNumError;
 
-    const whatsappLink = formatWhatsAppUrl(settings.storeWhatsApp, message);
-    if (whatsappLink) {
-      window.open(whatsappLink, "_blank");
-      toast({
-        title: "Order sent to WhatsApp!",
-        description: "We'll contact you shortly to confirm your order.",
+      // Calculate totals
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert([{
+          order_number: orderNumber,
+          customer_id: user?.id || null,
+          customer_name: customerDetails.name,
+          customer_phone: customerDetails.phone,
+          customer_address: customerDetails.address,
+          notes: customerDetails.notes || null,
+          total_items: totalItems,
+          total_amount: totalAmount,
+          discount_amount: walletDiscount,
+          final_amount: finalAmount,
+          user_type: (profile?.user_type || "retail") as "dealer" | "retail",
+          status: "pending" as const,
+          order_channel: "whatsapp" as const
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const wholesaleIdMap: Record<string, string> = {};
+      const wholesaleCodes = items.filter(i => i.is_wholesale).map(i => i.product_code);
+      if (wholesaleCodes.length > 0) {
+        const { data: wpData, error: wpError } = await supabase
+          .from("wholesale_products")
+          .select("id, product_code")
+          .in("product_code", wholesaleCodes);
+        
+        if (wpError) throw wpError;
+        if (wpData) {
+          wpData.forEach((wp: Database["public"]["Tables"]["wholesale_products"]["Row"]) => { wholesaleIdMap[wp.product_code] = wp.id; });
+        }
+      }
+
+      const orderItems = items.map(item => ({
+        order_id: order.id,
+        product_id: item.is_wholesale ? (wholesaleIdMap[item.product_code] || null) : item.id,
+        product_code: item.product_code,
+        product_name: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Block stock for WhatsApp order
+      const { error: blockStockError } = await supabase.rpc("block_stock", { p_order_id: order.id });
+      
+      if (blockStockError) {
+        await supabase.from("orders").delete().eq("id", order.id);
+        throw new Error(`Stock blocking failed: ${blockStockError.message}`);
+      }
+
+      // Build WhatsApp message with order number
+      let message = `🎆 *NEW ORDER - GKP CRACKERS*\n\n`;
+      message += `📦 *Order #${order.order_number}*\n`;
+      message += `👤 *Customer:* ${customerDetails.name}\n`;
+      message += `📞 *Phone:* ${customerDetails.phone}\n`;
+      message += `📍 *Address:* ${customerDetails.address}\n`;
+      if (customerDetails.notes) {
+        message += `📝 *Notes:* ${customerDetails.notes}\n`;
+      }
+      message += `\n━━━━━━━━━━━━━━━━\n`;
+      message += `📦 *ORDER DETAILS:*\n\n`;
+
+      items.forEach((item, index) => {
+        const itemSaving = (item.mrp - item.price) * item.quantity;
+        const cases = item.is_wholesale && item.case_qty ? Math.round(item.quantity / item.case_qty) : null;
+        message += `${index + 1}. ${item.name}\n`;
+        message += `   MRP: ₹${item.mrp}/pc → Sale: ₹${item.price}/pc\n`;
+        if (item.is_wholesale && item.case_qty) {
+          message += `   Case: ${item.case_qty} pcs × ₹${item.price} = ₹${item.case_price?.toLocaleString()}/case\n`;
+          message += `   Qty: ${cases} case(s) = ${item.quantity} pcs → ₹${(item.quantity * item.price).toLocaleString()}\n`;
+        } else {
+          message += `   Qty: ${item.quantity} × ₹${item.price} = ₹${(item.quantity * item.price).toLocaleString()}\n`;
+        }
+        if (itemSaving > 0) {
+          message += `   💰 Saving: ₹${itemSaving.toLocaleString()}\n`;
+        }
+        message += `\n`;
       });
-    } else {
+
+      message += `━━━━━━━━━━━━━━━━\n`;
+      message += `📊 *TOTAL ITEMS:* ${totalItems}\n`;
+      message += `💵 *MRP TOTAL:* ₹${totalMrp.toLocaleString()}\n`;
+      message += `🎉 *YOUR SAVINGS:* ₹${totalSavings.toLocaleString()} (${savingsPercentage}% OFF)\n`;
+      message += `💰 *SALE TOTAL:* ₹${totalAmount.toLocaleString()}\n`;
+      if (walletDiscount > 0) {
+        message += `🎁 *WALLET DISCOUNT:* -₹${walletDiscount.toLocaleString()}\n`;
+      }
+      message += `💵 *FINAL TOTAL:* ₹${finalAmount.toLocaleString()}\n\n`;
+      message += `✅ *Order saved to system*\n⏳ Awaiting confirmation`;
+
+      const whatsappLink = formatWhatsAppUrl(settings.storeWhatsApp, message);
+      if (whatsappLink) {
+        window.open(whatsappLink, "_blank");
+        toast({
+          title: "Order saved and sent to WhatsApp!",
+          description: `Order #${order.order_number} has been saved. We'll contact you shortly to confirm.`,
+        });
+        clearCart();
+        // Navigate after a short delay to allow user to see the toast
+        setTimeout(() => navigate("/orders"), 1500);
+      } else {
+        toast({
+          title: "Unable to open WhatsApp",
+          description: "Please check the store WhatsApp number in settings.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: unknown) {
+      console.error("WhatsApp order error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to send order";
       toast({
-        title: "Unable to open WhatsApp",
-        description: "Please check the store WhatsApp number in settings.",
+        title: "Failed to send order",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -175,10 +313,61 @@ export default function Cart() {
 
     setIsSubmitting(true);
     try {
-      // Refresh prices from DB to prevent stale price rejection
+      // ISSUE #14: Validate stock BEFORE creating order
       const retailIds = items.filter(i => !i.is_wholesale).map(i => i.id);
       const wholesaleIds = items.filter(i => i.is_wholesale).map(i => i.id);
 
+      // Check retail stock
+      if (retailIds.length > 0) {
+        const { data: retailProducts, error: stockError } = await supabase
+          .from("products")
+          .select("id, stock")
+          .in("id", retailIds);
+
+        if (stockError) throw stockError;
+        if (retailProducts) {
+          for (const item of items.filter(i => !i.is_wholesale)) {
+            const product = retailProducts.find(p => p.id === item.id);
+            if (!product || product.stock < item.quantity) {
+              const availableStock = product?.stock || 0;
+              toast({
+                title: "Insufficient Stock",
+                description: `${item.name}: Only ${availableStock} in stock, but you ordered ${item.quantity}`,
+                variant: "destructive"
+              });
+              setIsSubmitting(false);
+              return;
+            }
+          }
+        }
+      }
+
+      // Check wholesale stock
+      if (wholesaleIds.length > 0) {
+        const { data: wholesaleProducts, error: stockError } = await supabase
+          .from("wholesale_products")
+          .select("id, stock")
+          .in("id", wholesaleIds);
+
+        if (stockError) throw stockError;
+        if (wholesaleProducts) {
+          for (const item of items.filter(i => i.is_wholesale)) {
+            const product = wholesaleProducts.find(p => p.id === item.id);
+            if (!product || product.stock < item.quantity) {
+              const availableStock = product?.stock || 0;
+              toast({
+                title: "Insufficient Stock",
+                description: `${item.name}: Only ${availableStock} in stock, but you ordered ${item.quantity}`,
+                variant: "destructive"
+              });
+              setIsSubmitting(false);
+              return;
+            }
+          }
+        }
+      }
+
+      // Refresh prices from DB to prevent stale price rejection
       const priceMap: Record<string, number> = {};
 
       if (retailIds.length > 0) {
@@ -249,10 +438,12 @@ export default function Cart() {
       const wholesaleIdMap: Record<string, string> = {};
       const wholesaleCodes = freshItems.filter(i => i.is_wholesale).map(i => i.product_code);
       if (wholesaleCodes.length > 0) {
-        const { data: wpData } = await supabase
+        const { data: wpData, error: wpError } = await supabase
           .from("wholesale_products")
           .select("id, product_code")
           .in("product_code", wholesaleCodes);
+        
+        if (wpError) throw wpError;
         if (wpData) {
           wpData.forEach((wp: Database["public"]["Tables"]["wholesale_products"]["Row"]) => { wholesaleIdMap[wp.product_code] = wp.id; });
         }
@@ -274,8 +465,28 @@ export default function Cart() {
 
       if (itemsError) throw itemsError;
 
-      // Block stock after order items inserted
-      await supabase.rpc("block_stock", { p_order_id: order.id });
+      // ISSUE #101: Check block_stock error instead of silently ignoring
+      const { error: blockStockError } = await supabase.rpc("block_stock", { p_order_id: order.id });
+      
+      if (blockStockError) {
+        // If stock blocking fails, cancel the order since we can't guarantee stock
+        await supabase.from("orders").delete().eq("id", order.id);
+        throw new Error(`Stock blocking failed: ${blockStockError.message}`);
+      }
+
+      // Send WhatsApp notification to admin about the order (Issue #113)
+      const notificationMessage = `🎉 *NEW ORDER PLACED!*\n\n👤 Customer: ${customerDetails.name}\n📞 Phone: ${customerDetails.phone}\n📍 Address: ${customerDetails.address}\n\n📦 Order #${order.order_number}\n💰 Amount: ₹${freshFinal.toLocaleString()}\n\nCheck admin panel for details.`;
+      
+      try {
+        await supabase.rpc("send_whatsapp_notification", {
+          p_phone: settings.storeWhatsApp,
+          p_message: notificationMessage,
+          p_order_id: order.id
+        });
+      } catch (notificationError) {
+        console.error("Failed to send WhatsApp notification:", notificationError);
+        // Don't fail the order if notification fails, just log it
+      }
 
       // Deduct wallet balance if used
       if (useWallet && freshWalletDiscount > 0 && user) {

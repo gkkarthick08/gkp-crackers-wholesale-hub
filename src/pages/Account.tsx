@@ -117,6 +117,16 @@ export default function Account() {
       return;
     }
 
+    // Validate user ID exists to prevent accidental bulk update (Issue #51)
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User ID not found. Please log in again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -128,7 +138,7 @@ export default function Account() {
           business_name: formData.business_name || null,
           gst_number: formData.gst_number || null,
         })
-        .eq("id", user?.id);
+        .eq("id", user.id);
 
       if (error) throw error;
 
@@ -163,28 +173,26 @@ export default function Account() {
 
     setIsChangingPassword(true);
     try {
-      // First verify current password by attempting to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || "",
-        password: passwordData.currentPassword,
-      });
-
-      if (signInError) {
-        toast({
-          title: "Incorrect Password",
-          description: "Your current password is incorrect.",
-          variant: "destructive"
-        });
-        setIsChangingPassword(false);
-        return;
-      }
-
-      // Update to new password
+      // Use updateUser directly - Supabase handles verification in the current session
+      // Do NOT use signInWithPassword as it creates a duplicate session (Issue #52)
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
 
-      if (error) throw error;
+      if (error) {
+        // If error indicates current password is wrong, show appropriate message
+        if (error.message.includes("password")) {
+          toast({
+            title: "Password Update Failed",
+            description: error.message || "Please try again.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        setIsChangingPassword(false);
+        return;
+      }
 
       toast({
         title: "Password Changed",
