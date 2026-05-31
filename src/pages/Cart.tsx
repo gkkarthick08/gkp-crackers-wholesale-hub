@@ -606,7 +606,7 @@ export default function Cart() {
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <CartItemsList
-              items={items}
+              items={items as any}
               updateQuantity={updateQuantity}
               removeItem={removeItem}
             />
