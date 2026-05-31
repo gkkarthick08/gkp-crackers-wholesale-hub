@@ -3,13 +3,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Copy, Share2, Users, Check, Gift, Sparkles, MessageCircle, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export function ReferralCard() {
   const { profile } = useAuth();
+  const { settings } = useSiteSettings();
   const [copied, setCopied] = useState(false);
 
+  const referrerBonus = settings.referralBonus;
+  const referredBonus = settings.referralBonusReferred;
   const referralCode = profile?.referral_code || "";
   const referralLink = `${window.location.origin}/auth?ref=${referralCode}`;
 
