@@ -68,7 +68,7 @@ export function ReferralCard() {
           </div>
           <div>
             <h3 className="font-bold text-xl text-white">Refer & Earn</h3>
-            <p className="text-sm text-white/80">Earn ₹50 for each referral!</p>
+            <p className="text-sm text-white/80">Earn ₹{referrerBonus} for each referral!</p>
           </div>
         </div>
       </div>
