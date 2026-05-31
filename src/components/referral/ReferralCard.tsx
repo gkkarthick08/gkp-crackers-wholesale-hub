@@ -133,7 +133,7 @@ export function ReferralCard() {
             {[
               "Share your unique referral code",
               "Friends sign up using your code",
-              "You earn ₹50, they get ₹25!"
+              `You earn ₹${referrerBonus}, they get ₹${referredBonus}!`
             ].map((step, index) => (
               <div key={index} className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
