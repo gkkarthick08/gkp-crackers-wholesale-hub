@@ -106,8 +106,15 @@ export default function AdminWallet() {
         description: `₹${transAmount} ${transactionType}ed to ${selectedUser.full_name}'s wallet`,
       });
 
+      // Optimistic local update — avoids refetching every user
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUser.id
+            ? { ...u, wallet_balance: (u.wallet_balance || 0) + finalAmount }
+            : u
+        )
+      );
       setIsDialogOpen(false);
-      fetchUsers();
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error("Unknown error");
       toast({ title: "Transaction failed", description: err.message, variant: "destructive" });
