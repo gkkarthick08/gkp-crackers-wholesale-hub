@@ -109,6 +109,12 @@ export default function AdminReferrals() {
     }
   }, [toast]);
 
+  useEffect(() => {
+    fetchReferrals();
+  }, [fetchReferrals]);
+
+
+
   const handleClaimBonus = async (referralId: string) => {
     try {
       setProcessingId(referralId);
