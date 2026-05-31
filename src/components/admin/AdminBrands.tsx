@@ -31,7 +31,7 @@ interface Brand {
   description: string | null;
   logo_url: string | null;
   is_active: boolean;
-  created_at: string;
+  created_at: string | null;
   product_count?: number;
 }
 
@@ -74,6 +74,7 @@ export default function AdminBrands() {
 
       const brandsWithCounts = (brandsData || []).map((brand) => ({
         ...brand,
+        is_active: brand.is_active ?? true,
         product_count: countMap[brand.id] || 0,
       }));
 

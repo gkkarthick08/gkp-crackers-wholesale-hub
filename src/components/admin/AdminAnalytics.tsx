@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
 import { LucideIcon } from "lucide-react";
 import {
@@ -39,6 +38,14 @@ interface TopProduct {
   totalQuantity: number;
   totalRevenue: number;
 }
+
+type AnalyticsOrder = {
+  id: string;
+  final_amount: number | null;
+  status: string | null;
+  created_at?: string | null;
+  user_type?: string | null;
+};
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -119,23 +126,23 @@ export default function AdminAnalytics() {
             .select("product_id, product_name, product_code, quantity, total_price, order_id"),
         ]);
 
-        const orders = ordersRes.data || [];
+        const orders = (ordersRes.data || []) as AnalyticsOrder[];
         const profiles = profilesRes.data || [];
         const products = productsRes.data || [];
         const categories = categoriesRes.data || [];
-        const prevOrders = prevOrdersRes.data || [];
+        const prevOrders = (prevOrdersRes.data || []) as AnalyticsOrder[];
         const orderItems = orderItemsRes.data || [];
 
         // Filter out cancelled orders for revenue calculations
         const activeOrders = orders.filter(o => o.status !== "cancelled");
-        const prevActiveOrders = prevOrders.filter((o: Database["public"]["Tables"]["orders"]["Row"]) => o.status !== "cancelled");
+        const prevActiveOrders = prevOrders.filter((o) => o.status !== "cancelled");
 
         // Get order IDs that are NOT cancelled (for order items filtering)
         const activeOrderIds = new Set(activeOrders.map(o => o.id));
 
         // Calculate metrics - exclude cancelled orders from revenue
         const totalRevenue = activeOrders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-        const prevRevenue = prevActiveOrders.reduce((sum: number, o: Database["public"]["Tables"]["orders"]["Row"]) => sum + (Number(o.final_amount) || 0), 0);
+        const prevRevenue = prevActiveOrders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
         const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
         const orderGrowth = prevActiveOrders.length > 0 ? ((activeOrders.length - prevActiveOrders.length) / prevActiveOrders.length) * 100 : 0;
         const avgOrderValue = activeOrders.length > 0 ? totalRevenue / activeOrders.length : 0;
@@ -166,7 +173,7 @@ export default function AdminAnalytics() {
           const day = subDays(now, i);
           const dayStr = format(day, "yyyy-MM-dd");
           const dayOrders = activeOrders.filter(
-            (o) => format(new Date(o.created_at), "yyyy-MM-dd") === dayStr
+            (o) => o.created_at && format(new Date(o.created_at), "yyyy-MM-dd") === dayStr
           );
           revenueByDay.push({
             date: format(day, "EEE"),

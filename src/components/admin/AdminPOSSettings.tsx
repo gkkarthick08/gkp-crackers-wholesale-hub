@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Database, Json } from "@/integrations/supabase/types";
+import type { Json } from "@/integrations/supabase/types";
 import {
   Loader2, Save, Receipt, Store, FileText, Ruler, Percent
 } from "lucide-react";
@@ -41,6 +41,28 @@ export const defaultPOSSettings: POSSettings = {
   posDefaultPackingPercent: 0,
 };
 
+type POSSettingKey = keyof POSSettings;
+
+const posSettingKeys = Object.keys(defaultPOSSettings) as POSSettingKey[];
+
+const parsePOSSetting = <K extends POSSettingKey>(key: K, value: unknown): POSSettings[K] => {
+  const fallback = defaultPOSSettings[key];
+
+  if (typeof fallback === "boolean") {
+    return (value === "true" || value === true) as POSSettings[K];
+  }
+
+  if (typeof fallback === "number") {
+    return Number(value ?? fallback) as POSSettings[K];
+  }
+
+  if (key === "posBillSize") {
+    return (value === "58mm" ? "58mm" : "80mm") as POSSettings[K];
+  }
+
+  return String(value ?? fallback) as POSSettings[K];
+};
+
 export function usePOSSettings() {
   const [settings, setSettings] = useState<POSSettings>(defaultPOSSettings);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,13 +75,14 @@ export function usePOSSettings() {
           .select("key, value")
           .like("key", "pos%");
         if (data && data.length > 0) {
-          const loaded: Record<string, unknown> = {};
+          const loaded: Partial<POSSettings> = {};
           data.forEach((item) => {
-            if (item.key in defaultPOSSettings) {
-              loaded[item.key] = item.value;
+            if (posSettingKeys.includes(item.key as POSSettingKey)) {
+              const key = item.key as POSSettingKey;
+              Object.assign(loaded, { [key]: parsePOSSetting(key, item.value) });
             }
           });
-          setSettings((prev) => ({ ...prev, ...(loaded as Partial<POSSettings>) }));
+          setSettings((prev) => ({ ...prev, ...loaded }));
 
         }
       } catch (err) {
@@ -88,13 +111,14 @@ export default function AdminPOSSettings() {
           .select("key, value")
           .like("key", "pos%");
         if (data && data.length > 0) {
-          const loaded: Record<string, unknown> = {};
+          const loaded: Partial<POSSettings> = {};
           data.forEach((item) => {
-            if (item.key in defaultPOSSettings) {
-              loaded[item.key] = item.value;
+            if (posSettingKeys.includes(item.key as POSSettingKey)) {
+              const key = item.key as POSSettingKey;
+              Object.assign(loaded, { [key]: parsePOSSetting(key, item.value) });
             }
           });
-          setSettings((prev) => ({ ...prev, ...(loaded as Partial<POSSettings>) }));
+          setSettings((prev) => ({ ...prev, ...loaded }));
 
         }
       } catch (err) {
