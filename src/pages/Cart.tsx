@@ -217,6 +217,16 @@ export default function Cart() {
         throw new Error(`Stock blocking failed: ${blockStockError.message}`);
       }
 
+      // Send WhatsApp notification to admin
+      try {
+        await supabase.rpc("send_whatsapp_notification", {
+          p_phone: "+918610153961",
+          p_message: `New Order #${order.order_number}\nCustomer: ${order.customer_name}\nItems: ${order.total_items}\nAmount: ₹${order.final_amount}`
+        });
+      } catch (err) {
+        console.error("Failed to send notification:", err);
+      }
+
       // Build WhatsApp message with order number
       let message = `🎆 *NEW ORDER - GKP CRACKERS*\n\n`;
       message += `📦 *Order #${order.order_number}*\n`;
