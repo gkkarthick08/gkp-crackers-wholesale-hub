@@ -357,6 +357,74 @@ export default function POS() {
     } finally { setIsSyncing(false); }
   };
 
+  /**
+   * Issue #74: POS Receipt Edit - Save changes to database
+   * Handles updating pos_orders and pos_order_items when bill is edited
+   */
+  const onUpdateOrder = async (updatedOrder: PosOrder) => {
+    try {
+      // Find existing pos_order if synced
+      if (updatedOrder.synced) {
+        // First, delete old items
+        await supabase
+          .from("pos_order_items")
+          .delete()
+          .eq("pos_order_id", updatedOrder.id);
+
+        // Update pos_orders with new totals
+        const { error: updateErr } = await supabase
+          .from("pos_orders")
+          .update({
+            customer_name: updatedOrder.customer_name,
+            customer_phone: updatedOrder.customer_phone || null,
+            total_amount: updatedOrder.total_amount,
+            mrp_total: updatedOrder.mrp_total,
+            savings: updatedOrder.savings,
+            packing_charges: updatedOrder.packing_charges,
+            delivery_charges: updatedOrder.delivery_charges,
+          })
+          .eq("id", updatedOrder.id);
+
+        if (updateErr) throw updateErr;
+
+        // Re-insert updated items
+        const posItems = updatedOrder.items.map((i) => ({
+          pos_order_id: updatedOrder.id,
+          product_id: i.is_wholesale ? null : i.product_id,
+          product_code: i.product_code,
+          product_name: i.product_name,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          total_price: i.total_price,
+          mrp: i.mrp,
+          is_wholesale: i.is_wholesale,
+        }));
+        await supabase.from("pos_order_items").insert(posItems);
+
+        toast({
+          title: "Bill Updated",
+          description: "Changes have been saved to database.",
+        });
+      } else {
+        // Just update local storage for unsynced orders
+        await savePosOrder(updatedOrder);
+        toast({
+          title: "Bill Updated",
+          description: "Changes saved locally. Will sync when online.",
+        });
+      }
+
+      setShowReceipt(updatedOrder);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not save changes. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Auth guard
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -370,7 +438,7 @@ export default function POS() {
     <POSReceipt
       order={showReceipt}
       onNewBill={() => setShowReceipt(null)}
-      onUpdateOrder={(updated) => setShowReceipt(updated)}
+      onUpdateOrder={onUpdateOrder}
       availableProducts={products.map(p => ({
         id: p.id, product_code: p.product_code, name: p.name,
         mrp: p.mrp, price: p.price, is_wholesale: p.is_wholesale,
