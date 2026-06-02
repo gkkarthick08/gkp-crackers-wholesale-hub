@@ -171,8 +171,7 @@ export default function Cart() {
           discount_amount: walletDiscount,
           final_amount: finalAmount,
           user_type: (profile?.user_type || "retail") as "dealer" | "retail",
-          status: "pending" as const,
-          order_channel: "whatsapp" as const
+          status: "pending" as const
         }])
         .select()
         .single();
