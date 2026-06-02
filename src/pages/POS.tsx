@@ -371,6 +371,10 @@ export default function POS() {
       order={showReceipt}
       onNewBill={() => setShowReceipt(null)}
       onUpdateOrder={(updated) => setShowReceipt(updated)}
+      availableProducts={products.map(p => ({
+        id: p.id, product_code: p.product_code, name: p.name,
+        mrp: p.mrp, price: p.price, is_wholesale: p.is_wholesale,
+      }))}
     />
   );
 
