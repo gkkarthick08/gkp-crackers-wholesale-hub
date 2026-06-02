@@ -219,7 +219,7 @@ export default function Cart() {
 
       // Send WhatsApp notification to admin
       try {
-        await supabase.rpc("send_whatsapp_notification", {
+        await (supabase.rpc as any)("send_whatsapp_notification", {
           p_phone: "+918610153961",
           p_message: `New Order #${order.order_number}\nCustomer: ${order.customer_name}\nItems: ${order.total_items}\nAmount: ₹${order.final_amount}`
         });
