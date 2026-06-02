@@ -288,6 +288,12 @@ export default function POS() {
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) throw itemsErr;
+
+    // Block stock for POS order
+    const { error: blockError } = await supabase.rpc("block_stock", {
+      p_order_id: dbOrder.id
+    });
+    if (blockError) console.error("Stock reduction failed:", blockError);
   };
 
   const cartMrpTotal = useMemo(() => cart.reduce((s, i) => s + i.mrp * i.quantity, 0), [cart]);
