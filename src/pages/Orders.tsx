@@ -182,7 +182,8 @@ export default function Orders() {
   };
 
   const canCancelOrder = (status: string) => {
-    return status === "pending" || status === "confirmed";
+    // Customers can only cancel pending orders. Once confirmed, contact admin.
+    return status === "pending";
   };
 
   if (authLoading) {

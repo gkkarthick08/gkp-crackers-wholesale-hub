@@ -132,11 +132,13 @@ export default function AdminReferrals() {
         });
         fetchReferrals();
       } else {
+        // Server returned false: already claimed by another admin or missing
         toast({
-          title: "Error",
-          description: "Failed to claim bonus",
+          title: "Already claimed",
+          description: "This referral was just claimed by someone else.",
           variant: "destructive",
         });
+        fetchReferrals();
       }
     } catch (error) {
       console.error("Error claiming bonus:", error);

@@ -1,8 +1,26 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /pos
+Disallow: /wallet
+Disallow: /account
+Disallow: /orders
+Disallow: /cart
+Disallow: /auth
+Disallow: /forgot-password
+Disallow: /reset-password
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /pos
+Disallow: /wallet
+Disallow: /account
+Disallow: /orders
+Disallow: /cart
+Disallow: /auth
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +30,13 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /pos
+Disallow: /wallet
+Disallow: /account
+Disallow: /orders
+Disallow: /cart
+Disallow: /auth
+Disallow: /forgot-password
+Disallow: /reset-password

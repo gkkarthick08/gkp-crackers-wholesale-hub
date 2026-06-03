@@ -56,13 +56,14 @@ export default function Cart() {
     }
   }, [profile]);
 
-  const walletBalance = profile?.wallet_balance || 0;
-  const walletDiscount = useWallet ? Math.min(walletBalance, totalAmount) : 0;
+  const walletBalance = Math.max(0, profile?.wallet_balance || 0);
+  const walletEnabled = settings.enableWallet;
+  const canUseWallet = walletEnabled && walletBalance > 0;
+  const walletDiscount = useWallet && canUseWallet ? Math.min(walletBalance, totalAmount) : 0;
   const finalAmount = totalAmount - walletDiscount;
   const minOrderValue = isDealer ? settings.minOrderValueDealer : settings.minOrderValue;
   const isMinOrderMet = totalAmount >= minOrderValue;
   const amountNeeded = minOrderValue - totalAmount;
-  const walletEnabled = settings.enableWallet;
   const savingsPercentage = totalMrp > 0 ? Math.round((totalSavings / totalMrp) * 100) : 0;
 
   const handleCustomerDetailsChange = (field: string, value: string) => {
@@ -217,12 +218,15 @@ export default function Cart() {
         throw new Error(`Stock blocking failed: ${blockStockError.message}`);
       }
 
-      // Send WhatsApp notification to admin
+      // Send WhatsApp notification to admin (uses configured store WhatsApp number from settings)
       try {
-        await (supabase.rpc as any)("send_whatsapp_notification", {
-          p_phone: "+918610153961",
-          p_message: `New Order #${order.order_number}\nCustomer: ${order.customer_name}\nItems: ${order.total_items}\nAmount: ₹${order.final_amount}`
-        });
+        const adminPhone = settings.storeWhatsApp;
+        if (adminPhone) {
+          await (supabase.rpc as any)("send_whatsapp_notification", {
+            p_phone: adminPhone,
+            p_message: `New Order #${order.order_number}\nCustomer: ${order.customer_name}\nItems: ${order.total_items}\nAmount: ₹${order.final_amount}`
+          });
+        }
       } catch (err) {
         console.error("Failed to send notification:", err);
       }

@@ -28,27 +28,35 @@ export default function AdminStaff() {
   const fetchStaff = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Single query: get staff roles, then one batched profile fetch (fixes N+1)
       const { data: roles, error } = await supabase
         .from("user_roles")
         .select("id, user_id, role")
         .eq("role", "staff");
       if (error) throw error;
 
-      const staffList: StaffMember[] = [];
-      for (const role of roles || []) {
-        const { data: profile } = await supabase
+      const userIds = (roles || []).map(r => r.user_id);
+      let profileMap = new Map<string, { full_name: string | null; email: string | null; phone: string | null }>();
+
+      if (userIds.length > 0) {
+        const { data: profiles, error: pErr } = await supabase
           .from("profiles")
-          .select("full_name, email, phone")
-          .eq("id", role.user_id)
-          .single();
-        staffList.push({
+          .select("id, full_name, email, phone")
+          .in("id", userIds);
+        if (pErr) throw pErr;
+        profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      }
+
+      const staffList: StaffMember[] = (roles || []).map(role => {
+        const profile = profileMap.get(role.user_id);
+        return {
           user_id: role.user_id,
           role_id: role.id,
           full_name: profile?.full_name || "Unknown",
           email: profile?.email || null,
           phone: profile?.phone || null,
-        });
-      }
+        };
+      });
       setStaff(staffList);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error");
