@@ -91,8 +91,15 @@ export default function AdminPOSHistory() {
       o.customer_name.toLowerCase().includes(q) ||
       o.customer_phone?.toLowerCase().includes(q);
     const matchStatus = statusFilter === "all" || o.payment_status === statusFilter;
-    return matchSearch && matchStatus;
+    const od = new Date(o.created_at);
+    const matchFrom = !dateFrom || od >= new Date(dateFrom);
+    const matchTo = !dateTo || od <= new Date(`${dateTo}T23:59:59`);
+    return matchSearch && matchStatus && matchFrom && matchTo;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedFiltered = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const openOrder = (order: PosOrderRow) => {
     setSelectedOrder(order);
