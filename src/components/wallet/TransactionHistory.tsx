@@ -19,6 +19,8 @@ export function TransactionHistory() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [limit, setLimit] = useState(20);
+  const [hasMore, setHasMore] = useState(false);
 
   // Fix — fetchTransactions defined BEFORE useEffect ✅
   const fetchTransactions = useCallback(async () => {
@@ -28,16 +30,18 @@ export function TransactionHistory() {
         .select("*")
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(limit + 1);
 
       if (error) throw error;
-      setTransactions(data || []);
+      const rows = data || [];
+      setHasMore(rows.length > limit);
+      setTransactions(rows.slice(0, limit));
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, limit]);
 
   // Fix — useEffect now comes AFTER fetchTransactions ✅
   useEffect(() => {
