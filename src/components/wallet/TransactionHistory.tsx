@@ -150,6 +150,14 @@ export function TransactionHistory() {
                   </div>
                 </div>
               ))}
+              {hasMore && (
+                <button
+                  onClick={() => setLimit((l) => l + 20)}
+                  className="w-full text-sm text-primary hover:underline py-2"
+                >
+                  Load more transactions
+                </button>
+              )}
             </div>
           </ScrollArea>
         )}
