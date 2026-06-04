@@ -132,8 +132,22 @@ export default function AdminOrders() {
       order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_phone.includes(searchQuery);
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const orderDate = new Date(order.created_at);
+    const matchesFrom = !dateFrom || orderDate >= new Date(dateFrom);
+    const matchesTo = !dateTo || orderDate <= new Date(`${dateTo}T23:59:59`);
+    return matchesSearch && matchesStatus && matchesFrom && matchesTo;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Orders</h1>
+        <p className="text-muted-foreground">Manage customer orders</p>
+      </div>
 
   return (
     <div>
