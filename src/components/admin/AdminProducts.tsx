@@ -511,8 +511,29 @@ export default function AdminProducts() {
                 <Label>Stock</Label>
                 <Input
                   type="number"
+                  min="0"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>HSN Code</Label>
+                <Input
+                  value={formData.hsn_code}
+                  onChange={(e) => setFormData({ ...formData, hsn_code: e.target.value })}
+                  placeholder="e.g. 36041000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Display Order</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
                 />
               </div>
             </div>
