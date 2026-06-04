@@ -278,7 +278,7 @@ export default function AdminPOSHistory() {
             </CardContent>
           </Card>
         ) : (
-          filtered.map((order) => {
+          pagedFiltered.map((order) => {
             const StatusIcon = statusIcons[order.payment_status] || CheckCircle2;
             return (
               <Card key={order.id} className="hover:shadow-md transition-shadow">
@@ -326,6 +326,15 @@ export default function AdminPOSHistory() {
           })
         )}
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 text-sm">
+          <span className="text-muted-foreground">Page {currentPage} of {totalPages} • {filtered.length} bills</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</Button>
+            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+          </div>
+        </div>
+      )}
 
       {/* Order Detail Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => { if (!open) { setSelectedOrder(null); setIsEditing(false); } }}>
