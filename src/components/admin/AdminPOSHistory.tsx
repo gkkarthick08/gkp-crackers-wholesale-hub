@@ -242,14 +242,16 @@ export default function AdminPOSHistory() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by bill number, customer name or phone..."
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="pl-10" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="w-[150px]" />
+        <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="w-[150px]" />
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[160px]">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue />
@@ -261,6 +263,9 @@ export default function AdminPOSHistory() {
             <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
+        {(dateFrom || dateTo || statusFilter !== "all" || searchQuery) && (
+          <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); setStatusFilter("all"); setSearchQuery(""); setPage(1); }}>Clear</Button>
+        )}
       </div>
 
       {/* Orders List */}
