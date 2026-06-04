@@ -41,11 +41,15 @@ interface Product {
   wholesale_price: number;
   stock: number;
   is_visible: boolean;
+  display_order: number | null;
+  hsn_code: string | null;
   category_id: string | null;
   brand_id: string | null;
   category: { name: string } | null;
   brand: { name: string } | null;
 }
+
+const LOW_STOCK_THRESHOLD = 10;
 
 interface Category {
   id: string;
