@@ -149,13 +149,6 @@ export default function AdminOrders() {
         <p className="text-muted-foreground">Manage customer orders</p>
       </div>
 
-  return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Orders</h1>
-        <p className="text-muted-foreground">Manage customer orders</p>
-      </div>
-
       {/* Filters */}
       <Card className="shadow-card mb-6">
         <CardContent className="pt-6">
