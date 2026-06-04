@@ -46,11 +46,16 @@ const statusIcons: Record<string, typeof CheckCircle2> = {
   pending: AlertCircle,
 };
 
+const PAGE_SIZE = 50;
+
 export default function AdminPOSHistory() {
   const [orders, setOrders] = useState<PosOrderRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<PosOrderRow | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editItems, setEditItems] = useState<PosOrderItem[]>([]);
@@ -86,8 +91,15 @@ export default function AdminPOSHistory() {
       o.customer_name.toLowerCase().includes(q) ||
       o.customer_phone?.toLowerCase().includes(q);
     const matchStatus = statusFilter === "all" || o.payment_status === statusFilter;
-    return matchSearch && matchStatus;
+    const od = new Date(o.created_at);
+    const matchFrom = !dateFrom || od >= new Date(dateFrom);
+    const matchTo = !dateTo || od <= new Date(`${dateTo}T23:59:59`);
+    return matchSearch && matchStatus && matchFrom && matchTo;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedFiltered = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const openOrder = (order: PosOrderRow) => {
     setSelectedOrder(order);
@@ -230,14 +242,16 @@ export default function AdminPOSHistory() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by bill number, customer name or phone..."
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="pl-10" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="w-[150px]" />
+        <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="w-[150px]" />
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[160px]">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue />
@@ -249,6 +263,9 @@ export default function AdminPOSHistory() {
             <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
+        {(dateFrom || dateTo || statusFilter !== "all" || searchQuery) && (
+          <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); setStatusFilter("all"); setSearchQuery(""); setPage(1); }}>Clear</Button>
+        )}
       </div>
 
       {/* Orders List */}
@@ -261,7 +278,7 @@ export default function AdminPOSHistory() {
             </CardContent>
           </Card>
         ) : (
-          filtered.map((order) => {
+          pagedFiltered.map((order) => {
             const StatusIcon = statusIcons[order.payment_status] || CheckCircle2;
             return (
               <Card key={order.id} className="hover:shadow-md transition-shadow">
@@ -309,6 +326,15 @@ export default function AdminPOSHistory() {
           })
         )}
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 text-sm">
+          <span className="text-muted-foreground">Page {currentPage} of {totalPages} • {filtered.length} bills</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</Button>
+            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+          </div>
+        </div>
+      )}
 
       {/* Order Detail Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => { if (!open) { setSelectedOrder(null); setIsEditing(false); } }}>

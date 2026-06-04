@@ -41,11 +41,15 @@ interface Product {
   wholesale_price: number;
   stock: number;
   is_visible: boolean;
+  display_order: number | null;
+  hsn_code: string | null;
   category_id: string | null;
   brand_id: string | null;
   category: { name: string } | null;
   brand: { name: string } | null;
 }
+
+const LOW_STOCK_THRESHOLD = 10;
 
 interface Category {
   id: string;
@@ -83,6 +87,8 @@ export default function AdminProducts() {
     retail_price: "",
     wholesale_price: "",
     stock: "",
+    display_order: "0",
+    hsn_code: "",
     category_id: "",
     brand_id: "",
     is_visible: true,
@@ -132,6 +138,8 @@ export default function AdminProducts() {
       retail_price: "",
       wholesale_price: "",
       stock: "0",
+      display_order: "0",
+      hsn_code: "",
       category_id: "",
       brand_id: "",
       is_visible: true,
@@ -154,6 +162,8 @@ export default function AdminProducts() {
       retail_price: String(product.retail_price),
       wholesale_price: String(product.wholesale_price),
       stock: String(product.stock),
+      display_order: String(product.display_order ?? 0),
+      hsn_code: product.hsn_code || "",
       category_id: product.category_id || "",
       brand_id: product.brand_id || "",
       is_visible: product.is_visible,
@@ -265,7 +275,9 @@ export default function AdminProducts() {
           mrp: parseFloat(formData.mrp),
           retail_price: parseFloat(formData.retail_price),
           wholesale_price: parseFloat(formData.wholesale_price),
-          stock: parseInt(formData.stock) || 0,
+          stock: Math.max(0, parseInt(formData.stock) || 0),
+          display_order: parseInt(formData.display_order) || 0,
+          hsn_code: formData.hsn_code || null,
           category_id: formData.category_id || null,
           brand_id: formData.brand_id || null,
           is_visible: formData.is_visible,
@@ -305,13 +317,16 @@ export default function AdminProducts() {
           mrp: parseFloat(formData.mrp),
           retail_price: parseFloat(formData.retail_price),
           wholesale_price: parseFloat(formData.wholesale_price),
-          stock: parseInt(formData.stock) || 0,
+          stock: Math.max(0, parseInt(formData.stock) || 0),
+          display_order: parseInt(formData.display_order) || 0,
+          hsn_code: formData.hsn_code || null,
           category_id: formData.category_id || null,
           brand_id: formData.brand_id || null,
           is_visible: formData.is_visible,
           image_url: imageUrl || null,
           video_url: formData.video_url || null,
         };
+
 
         const { error } = await supabase
           .from("products")
@@ -439,7 +454,13 @@ export default function AdminProducts() {
                       <TableCell className="text-right">₹{product.mrp}</TableCell>
                       <TableCell className="text-right text-primary">₹{product.retail_price}</TableCell>
                       <TableCell className="text-right text-dealer">₹{product.wholesale_price}</TableCell>
-                      <TableCell className="text-right">{product.stock}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={product.stock <= 0 ? "text-destructive font-medium" : product.stock < LOW_STOCK_THRESHOLD ? "text-orange-600 font-medium" : ""}>
+                          {product.stock}
+                        </span>
+                        {product.stock <= 0 && <Badge variant="destructive" className="ml-2 text-[10px]">OOS</Badge>}
+                        {product.stock > 0 && product.stock < LOW_STOCK_THRESHOLD && <Badge variant="outline" className="ml-2 text-[10px] border-orange-500 text-orange-600">Low</Badge>}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={product.is_visible ? "default" : "secondary"}>
                           {product.is_visible ? "Visible" : "Hidden"}
@@ -490,8 +511,29 @@ export default function AdminProducts() {
                 <Label>Stock</Label>
                 <Input
                   type="number"
+                  min="0"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>HSN Code</Label>
+                <Input
+                  value={formData.hsn_code}
+                  onChange={(e) => setFormData({ ...formData, hsn_code: e.target.value })}
+                  placeholder="e.g. 36041000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Display Order</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
                 />
               </div>
             </div>

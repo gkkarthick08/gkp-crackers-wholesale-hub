@@ -18,6 +18,7 @@ import POSHeader from "@/components/pos/POSHeader";
 import POSProductGrid from "@/components/pos/POSProductGrid";
 import POSCartPanel from "@/components/pos/POSCartPanel";
 import POSReceipt from "@/components/pos/POSReceipt";
+import { usePOSSettings } from "@/components/admin/AdminPOSSettings";
 
 interface PosProduct {
   id: string;
@@ -68,9 +69,19 @@ export default function POS() {
   const [unsyncedCount, setUnsyncedCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showReceipt, setShowReceipt] = useState<PosOrder | null>(null);
+  const { settings: posSettings } = usePOSSettings();
   const [packingCharges, setPackingCharges] = useState(0);
   const [packingPercent, setPackingPercent] = useState(0);
   const [deliveryCharges, setDeliveryCharges] = useState(0);
+
+  // Apply default packing % from POS settings (only on initial load if user hasn't customized)
+  const defaultPackingApplied = useRef(false);
+  useEffect(() => {
+    if (!defaultPackingApplied.current && posSettings.posDefaultPackingPercent > 0) {
+      setPackingPercent(posSettings.posDefaultPackingPercent);
+      defaultPackingApplied.current = true;
+    }
+  }, [posSettings.posDefaultPackingPercent]);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
