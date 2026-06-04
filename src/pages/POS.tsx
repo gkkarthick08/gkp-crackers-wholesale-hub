@@ -18,6 +18,7 @@ import POSHeader from "@/components/pos/POSHeader";
 import POSProductGrid from "@/components/pos/POSProductGrid";
 import POSCartPanel from "@/components/pos/POSCartPanel";
 import POSReceipt from "@/components/pos/POSReceipt";
+import { usePOSSettings } from "@/components/admin/AdminPOSSettings";
 
 interface PosProduct {
   id: string;
