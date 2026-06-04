@@ -317,13 +317,16 @@ export default function AdminProducts() {
           mrp: parseFloat(formData.mrp),
           retail_price: parseFloat(formData.retail_price),
           wholesale_price: parseFloat(formData.wholesale_price),
-          stock: parseInt(formData.stock) || 0,
+          stock: Math.max(0, parseInt(formData.stock) || 0),
+          display_order: parseInt(formData.display_order) || 0,
+          hsn_code: formData.hsn_code || null,
           category_id: formData.category_id || null,
           brand_id: formData.brand_id || null,
           is_visible: formData.is_visible,
           image_url: imageUrl || null,
           video_url: formData.video_url || null,
         };
+
 
         const { error } = await supabase
           .from("products")
