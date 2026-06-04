@@ -46,11 +46,16 @@ const statusIcons: Record<string, typeof CheckCircle2> = {
   pending: AlertCircle,
 };
 
+const PAGE_SIZE = 50;
+
 export default function AdminPOSHistory() {
   const [orders, setOrders] = useState<PosOrderRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<PosOrderRow | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editItems, setEditItems] = useState<PosOrderItem[]>([]);
