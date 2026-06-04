@@ -454,7 +454,13 @@ export default function AdminProducts() {
                       <TableCell className="text-right">₹{product.mrp}</TableCell>
                       <TableCell className="text-right text-primary">₹{product.retail_price}</TableCell>
                       <TableCell className="text-right text-dealer">₹{product.wholesale_price}</TableCell>
-                      <TableCell className="text-right">{product.stock}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={product.stock <= 0 ? "text-destructive font-medium" : product.stock < LOW_STOCK_THRESHOLD ? "text-orange-600 font-medium" : ""}>
+                          {product.stock}
+                        </span>
+                        {product.stock <= 0 && <Badge variant="destructive" className="ml-2 text-[10px]">OOS</Badge>}
+                        {product.stock > 0 && product.stock < LOW_STOCK_THRESHOLD && <Badge variant="outline" className="ml-2 text-[10px] border-orange-500 text-orange-600">Low</Badge>}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={product.is_visible ? "default" : "secondary"}>
                           {product.is_visible ? "Visible" : "Hidden"}
