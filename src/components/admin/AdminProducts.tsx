@@ -87,6 +87,8 @@ export default function AdminProducts() {
     retail_price: "",
     wholesale_price: "",
     stock: "",
+    display_order: "0",
+    hsn_code: "",
     category_id: "",
     brand_id: "",
     is_visible: true,
