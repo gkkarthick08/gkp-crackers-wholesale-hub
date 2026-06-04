@@ -385,6 +385,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           display_order: number | null
+          hsn_code: string | null
           id: string
           image_url: string | null
           is_visible: boolean | null
@@ -404,6 +405,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          hsn_code?: string | null
           id?: string
           image_url?: string | null
           is_visible?: boolean | null
@@ -423,6 +425,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          hsn_code?: string | null
           id?: string
           image_url?: string | null
           is_visible?: boolean | null
@@ -661,6 +664,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           display_order: number | null
+          hsn_code: string | null
           id: string
           image_url: string | null
           is_visible: boolean | null
@@ -681,6 +685,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          hsn_code?: string | null
           id?: string
           image_url?: string | null
           is_visible?: boolean | null
@@ -701,6 +706,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          hsn_code?: string | null
           id?: string
           image_url?: string | null
           is_visible?: boolean | null
