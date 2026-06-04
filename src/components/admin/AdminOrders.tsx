@@ -213,14 +213,14 @@ export default function AdminOrders() {
                       <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     </TableCell>
                   </TableRow>
-                ) : filteredOrders.length === 0 ? (
+                ) : pagedOrders.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No orders found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredOrders.map((order) => (
+                  pagedOrders.map((order) => (
                     <>
                       <TableRow key={order.id} className={expandedOrder === order.id ? "border-b-0" : ""}>
                         <TableCell className="font-mono font-medium">{order.order_number}</TableCell>
