@@ -216,14 +216,13 @@ export default function Auth() {
         }
 
         toast({
-          title:
-            "Registration Successful!",
-          description:
-            "Your account has been created. You can now login.",
+          title: "Registration Successful!",
+          description: isDealer
+            ? "Your dealer account was created. Admin verification is required to unlock wholesale pricing."
+            : "Your account has been created. If email confirmation is enabled, please check your inbox.",
         });
 
         setIsLogin(true);
-
         setFormData((prev) => ({
           ...prev,
           password: "",
