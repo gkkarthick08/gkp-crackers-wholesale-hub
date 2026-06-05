@@ -107,6 +107,25 @@ export default function OfferTimer() {
     return null;
   }
 
+  const isEnded =
+    timeLeft.days === 0 &&
+    timeLeft.hours === 0 &&
+    timeLeft.minutes === 0 &&
+    timeLeft.seconds === 0 &&
+    new Date(countdownSettings.targetDate).getTime() + 86400000 < Date.now();
+
+  if (isEnded) {
+    return (
+      <section className="py-6 gradient-hero">
+        <div className="container mx-auto px-4 text-center text-white font-bold text-lg flex items-center justify-center gap-2">
+          <Sparkles className="h-5 w-5 animate-sparkle" />
+          Offer Ended — Stay tuned for the next sale!
+          <Sparkles className="h-5 w-5 animate-sparkle" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-8 gradient-hero">
       <div className="container mx-auto px-4">
