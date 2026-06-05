@@ -442,49 +442,170 @@ export default function Auth() {
                       "Login"
                     )}
                   </Button>
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    <Link to="/forgot-password" className="hover:text-primary">
+                      Forgot password?
+                    </Link>
+                  </div>
                 </TabsContent>
 
                 {/* SIGNUP */}
-                <TabsContent
-                  value="signup"
-                  className="space-y-4"
-                >
-                  {/* existing signup fields remain */}
-
-                  {/* CONFIRM PASSWORD */}
+                <TabsContent value="signup" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">
-                      Confirm Password
-                    </Label>
-
+                    <Label htmlFor="name">Full Name *</Label>
                     <Input
-                      id="confirmPassword"
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
-                      placeholder="Confirm password"
-                      value={
-                        formData.confirmPassword
-                      }
-                      onChange={(e) =>
-                        updateField(
-                          "confirmPassword",
-                          e.target.value
-                        )
-                      }
+                      id="name"
+                      type="text"
+                      placeholder="Your full name"
+                      value={formData.name}
+                      onChange={(e) => updateField("name", e.target.value)}
                       required
                       disabled={isSubmitting}
                     />
+                    {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                  </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email *</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={(e) => updateField("email", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={formData.phone}
+                      onChange={(e) => updateField("phone", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                  </div>
+
+                  {isDealer && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="businessName">Business Name *</Label>
+                        <Input
+                          id="businessName"
+                          type="text"
+                          placeholder="Your shop / business name"
+                          value={formData.businessName}
+                          onChange={(e) => updateField("businessName", e.target.value)}
+                          required
+                          disabled={isSubmitting}
+                        />
+                        {errors.businessName && (
+                          <p className="text-sm text-destructive">{errors.businessName}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="gstNumber">GST Number (optional)</Label>
+                        <Input
+                          id="gstNumber"
+                          type="text"
+                          placeholder="22AAAAA0000A1Z5"
+                          value={formData.gstNumber}
+                          onChange={(e) => updateField("gstNumber", e.target.value.toUpperCase())}
+                          disabled={isSubmitting}
+                        />
+                        {errors.gstNumber && (
+                          <p className="text-sm text-destructive">{errors.gstNumber}</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password *</Label>
+                    <div className="relative">
+                      <Input
+                        id="signup-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Minimum 8 characters"
+                        value={formData.password}
+                        onChange={(e) => updateField("password", e.target.value)}
+                        required
+                        disabled={isSubmitting}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Re-enter password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => updateField("confirmPassword", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
                     {errors.confirmPassword && (
-                      <p className="text-sm text-destructive">
-                        {
-                          errors.confirmPassword
-                        }
-                      </p>
+                      <p className="text-sm text-destructive">{errors.confirmPassword}</p>
                     )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="referralCode">Referral Code (optional)</Label>
+                    <Input
+                      id="referralCode"
+                      type="text"
+                      placeholder="GKPXXXXXX"
+                      value={formData.referralCode}
+                      onChange={(e) => updateField("referralCode", e.target.value.toUpperCase())}
+                      disabled={isSubmitting}
+                    />
+                    {errors.referralCode && (
+                      <p className="text-sm text-destructive">{errors.referralCode}</p>
+                    )}
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Creating account...
+                      </>
+                    ) : isDealer ? (
+                      "Create Dealer Account"
+                    ) : (
+                      "Create Account"
+                    )}
+                  </Button>
+
+                  {isDealer && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Dealer accounts require admin verification before wholesale pricing unlocks.
+                    </p>
+                  )}
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    <Link to="/forgot-password" className="hover:text-primary">
+                      Forgot password?
+                    </Link>
                   </div>
                 </TabsContent>
               </form>
