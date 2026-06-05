@@ -7,8 +7,10 @@ import StoreLocation from "@/components/StoreLocation";
 import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {
+  const { user } = useAuth();
   usePageMeta({
     title: "GKP Crackers — Best Crackers at Wholesale & Retail Prices",
     description: "Buy crackers online from GKP Crackers Sivakasi. Best prices on Diwali crackers, wholesale and retail. Fast delivery across Tamil Nadu."
@@ -20,7 +22,7 @@ export default function Index() {
       <main>
         <HeroSection />
         <OfferTimer />
-        <LoginOptions />
+        {!user && <LoginOptions />}
         <WhyChooseUs />
         <StoreLocation />
       </main>

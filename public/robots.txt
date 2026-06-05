@@ -40,3 +40,5 @@ Disallow: /cart
 Disallow: /auth
 Disallow: /forgot-password
 Disallow: /reset-password
+
+Sitemap: https://gkpcrackers.com/sitemap.xml
