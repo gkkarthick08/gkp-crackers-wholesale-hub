@@ -16,10 +16,21 @@ import AccountSettings from "@/pages/account/AccountSettings";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
-  phone: z.string().min(10, "Phone must be at least 10 digits").max(15, "Phone too long").optional().or(z.literal("")),
+  phone: z
+    .string()
+    .regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, "Enter a valid 10-digit Indian phone number")
+    .optional()
+    .or(z.literal("")),
   address: z.string().max(500, "Address too long").optional().or(z.literal("")),
   business_name: z.string().max(200, "Business name too long").optional().or(z.literal("")),
-  gst_number: z.string().max(50, "GST number too long").optional().or(z.literal("")),
+  gst_number: z
+    .string()
+    .regex(
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+      "Invalid GST number format (e.g. 22AAAAA0000A1Z5)"
+    )
+    .optional()
+    .or(z.literal("")),
 });
 
 const passwordSchema = z.object({
